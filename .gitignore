@@ -1,9 +1,10 @@
 __pycache__
 
-/build*
 /.vscode
-
 /.vs
+/.idea
+
+/build*
 /out
 /scenes
 
