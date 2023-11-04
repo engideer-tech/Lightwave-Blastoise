@@ -4,6 +4,7 @@ __pycache__
 /.vs
 /.idea
 
+/cmake-build-debug
 /build*
 /out
 /scenes
