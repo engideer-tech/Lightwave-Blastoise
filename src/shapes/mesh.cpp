@@ -58,8 +58,8 @@ public:
         m_smoothNormals = properties.get<bool>("smooth", true);
         readPLY(m_originalPath.string(), m_triangles, m_vertices);
         logger(EInfo, "loaded ply with %d triangles, %d vertices",
-            m_triangles.size(),
-            m_vertices.size()
+               m_triangles.size(),
+               m_vertices.size()
         );
         buildAccelerationStructure();
     }
@@ -71,14 +71,14 @@ public:
 
     std::string toString() const override {
         return tfm::format(
-            "Mesh[\n"
-            "  vertices = %d,\n"
-            "  triangles = %d,\n"
-            "  filename = \"%s\"\n"
-            "]",
-            m_vertices.size(),
-            m_triangles.size(),
-            m_originalPath.generic_string()
+                "Mesh[\n"
+                "  vertices = %d,\n"
+                "  triangles = %d,\n"
+                "  filename = \"%s\"\n"
+                "]",
+                m_vertices.size(),
+                m_triangles.size(),
+                m_originalPath.generic_string()
         );
     }
 };
