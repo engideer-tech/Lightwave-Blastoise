@@ -87,6 +87,7 @@ endif()
 
 if(WIN32)
   target_link_libraries(${MY_TARGET_NAME} PRIVATE wsock32 ws2_32)
+  set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-static")
 endif()
 
 add_extra_options(${MY_TARGET_NAME})

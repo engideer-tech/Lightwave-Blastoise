@@ -19,10 +19,6 @@ private:
 
 public:
     Perspective(const Properties &properties) : Camera(properties) {
-        // hints:
-        // * precompute any expensive operations here (most importantly trigonometric functions)
-        // * use m_resolution to find the aspect ratio of the image
-
         const float x1 = 0.0f, y1 = 0.0f;
         const float x2 = 0.0f, y2 = 1.0f;
         const float fov = properties.get<float>("fov");
@@ -36,34 +32,32 @@ public:
         const float RHS2 = y2 * u - x2 * v - a2 * a3 * std::sin(alp1);
         const float x3 = (1 / (a3 * a3)) * (u * RHS1 - v * RHS2);
 
+        // TODO: calculate differently based on axis of fov
         const float resolutionRatio = static_cast<float>(m_resolution.x()) / static_cast<float>(m_resolution.y());
         const float y3 = x3 / resolutionRatio;
 
-        tfToCameraCoordsSys.setColumn(0, Vector(x3, 0, 0));
-        tfToCameraCoordsSys.setColumn(1, Vector(0, y3, 0));
-        tfToCameraCoordsSys.setColumn(2, Vector(0, 0, 1));
+        std::cout << "x3: " << x3 << " y3: " << y3 << "\n";
 
-        // std::cout << "x3: " << x3 << " y3: " << y3 << " alp1 " << alp1 << " alp2 " << alp2 << " alp3 " << alp3 << "\n";
+        tfToCameraCoordsSys.setColumn(0, Vector(x3, 0.0f, 0.0f));
+        tfToCameraCoordsSys.setColumn(1, Vector(0.0f, y3, 0.0f));
+        tfToCameraCoordsSys.setColumn(2, Vector(0.0f, 0.0f, 1.0f));
+
+        // const Point2 point{-0.435041, 0.216175};
+        // const Vector directionInCameraCoords = tfToCameraCoordsSys * Vector(point.x(), point.y(), 0.0f);
+        // std::cout << "matrix " << tfToCameraCoordsSys << "\n";
+        // std::cout << "point " << point << " direction " << directionInCameraCoords << "\n";
     }
 
     CameraSample sample(const Point2 &normalized, Sampler &rng) const override {
-        // hints:
-        // * use m_transform to transform the local camera coordinate system into the world coordinate system
+        const Vector directionInCameraCoords = tfToCameraCoordsSys * Vector(normalized.x(), normalized.y(), 1.0f);
 
-        const Vector directionInCameraCoords = (tfToCameraCoordsSys * Vector(normalized.x(), normalized.x(), 0.f));
-
+        // TODO: take camera translation into account
         return CameraSample{
                 .ray = Ray(Vector(0.0f, 0.0f, 0.0f),
                            m_transform->apply(directionInCameraCoords.normalized())
                 ),
                 .weight = Color(1.0f)
         };
-
-        // return CameraSample{
-        //         .ray = Ray(Vector(normalized.x(), normalized.x(), 0.f),
-        //                    Vector(0.f, 0.f, 1.f)),
-        //         .weight = Color(1.0f)
-        // };
     }
 
     std::string toString() const override {
