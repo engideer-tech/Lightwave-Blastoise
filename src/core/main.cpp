@@ -31,7 +31,7 @@ int main(int argc, const char *argv[]) {
 
 #ifdef LW_OS_WINDOWS
     // The error dialog might interfere with the run_tests.py script on Windows, so disable it. 
-   _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+    // _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 #endif
 
     try {
