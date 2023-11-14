@@ -15,7 +15,8 @@ class Perspective : public Camera {
 private:
     static constexpr float degToPi = Pi / 180.0f;
     static constexpr float angle2 = 90.0f * degToPi;
-    Matrix3x3 tfToCameraCoordsSys{};
+    float cameraXScalar;
+    float cameraYScalar;
 
 public:
     /**
@@ -44,20 +45,23 @@ public:
         const float y3 = (fovAxis == "x") != (m_resolution.x() < m_resolution.y()) ? // XOR
                          p3x / resolutionRatio : p3x * resolutionRatio;
 
-        std::cout << "p3x: " << p3x << " y3: " << y3 << "\n";
-
-        tfToCameraCoordsSys.setColumn(0, Vector(fovAxis == "x" ? p3x : y3, 0.0f, 0.0f));
-        tfToCameraCoordsSys.setColumn(1, Vector(0.0f, fovAxis == "x" ? y3 : p3x, 0.0f));
-        tfToCameraCoordsSys.setColumn(2, Vector(0.0f, 0.0f, 1.0f));
+        if (fovAxis == "x") {
+            cameraXScalar = p3x;
+            cameraYScalar = y3;
+        } else {
+            cameraXScalar = y3;
+            cameraYScalar = p3x;
+        }
     }
 
     CameraSample sample(const Point2 &normalized, Sampler &rng) const override {
-        const Vector directionInCameraCoords = tfToCameraCoordsSys * Vector(normalized.x(), normalized.y(), 1.0f);
+        const Vector directionInCameraCoords = Vector(normalized.x() * cameraXScalar,
+                                                      normalized.y() * cameraYScalar,
+                                                      1.0f);
 
-        // TODO: take camera translation into account
         return CameraSample{
-                .ray = Ray(Vector(0.0f, 0.0f, 0.0f),
-                           m_transform->apply(directionInCameraCoords.normalized())
+                .ray = Ray(m_transform->apply(Point(0.0f, 0.0f, 0.0f)),
+                           m_transform->apply(directionInCameraCoords).normalized()
                 ),
                 .weight = Color(1.0f)
         };
