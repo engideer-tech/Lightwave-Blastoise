@@ -1,5 +1,4 @@
 #include <lightwave.hpp>
-#include <iostream>
 
 namespace lightwave {
 
@@ -26,7 +25,7 @@ public:
      * and p3 = edge of image plane on the fovAxis. p1 and p2 are known, p3 is computed with Pythagoras
      * and the law of sines, given we know all the triangle's angles.
      */
-    explicit Perspective(const Properties &properties) : Camera(properties) {
+    explicit Perspective(const Properties& properties) : Camera(properties) {
         const float fov = properties.get<float>("fov", 90);
         const std::string fovAxis = properties.get<std::string>("fovAxis", "x");
 
@@ -55,7 +54,7 @@ public:
         }
     }
 
-    CameraSample sample(const Point2 &normalized, Sampler &rng) const override {
+    CameraSample sample(const Point2& normalized, Sampler& rng) const override {
         const Vector directionInCameraSystem = Vector(normalized.x() * xScalar,
                                                       normalized.y() * yScalar,
                                                       1.0f);
