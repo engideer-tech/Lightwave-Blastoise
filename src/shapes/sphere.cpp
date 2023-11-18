@@ -13,10 +13,13 @@ class Sphere : public Shape {
     inline static void setSurfaceEventData(SurfaceEvent& surf, const Point& position) {
         surf.position = position;
 
-        // TODO: set tangents etc
-        surf.frame.normal = Vector(position).normalized();
+        // TODO: add UV mapping once it is known how spheres are supposed to be unwrapped for Lightwave
 
-        surf.pdf = 0.0f;
+        const Vector normal = Vector(position).normalized();
+        surf.frame = Frame(normal);
+        surf.frame.normal = normal;
+
+        surf.pdf = 0.0f; // TODO
     }
 
 public:

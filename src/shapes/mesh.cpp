@@ -34,14 +34,14 @@ protected:
         return int(m_triangles.size());
     }
 
-    bool intersect(int primitiveIndex, const Ray &ray, Intersection &its, Sampler &rng) const override {
-        NOT_IMPLEMENTED
-
+    bool intersect(int primitiveIndex, const Ray& ray, Intersection& its, Sampler& rng) const override {
         // hints:
         // * use m_triangles[primitiveIndex] to get the vertex indices of the triangle that should be intersected
         // * if m_smoothNormals is true, interpolate the vertex normals from m_vertices
         //   * make sure that your shading frame stays orthonormal!
         // * if m_smoothNormals is false, use the geometrical normal (can be computed from the vertex positions)
+
+
     }
 
     Bounds getBoundingBox(int primitiveIndex) const override {
@@ -53,7 +53,7 @@ protected:
     }
 
 public:
-    TriangleMesh(const Properties &properties) {
+    explicit TriangleMesh(const Properties& properties) {
         m_originalPath = properties.get<std::filesystem::path>("filename");
         m_smoothNormals = properties.get<bool>("smooth", true);
         readPLY(m_originalPath.string(), m_triangles, m_vertices);
@@ -64,7 +64,7 @@ public:
         buildAccelerationStructure();
     }
 
-    AreaSample sampleArea(Sampler &rng) const override {
+    AreaSample sampleArea(Sampler& rng) const override {
         // only implement this if you need triangle mesh area light sampling for your rendering competition
         NOT_IMPLEMENTED
     }

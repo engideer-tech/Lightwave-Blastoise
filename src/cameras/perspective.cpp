@@ -12,8 +12,8 @@ namespace lightwave {
  */
 class Perspective : public Camera {
 private:
-    static constexpr float degToPi = Pi / 180.0f;
-    static constexpr float angle2 = 90.0f * degToPi;
+    static constexpr float degToRad = Pi / 180.0f;
+    static constexpr float angle2 = 90.0f * degToRad;
     float xScalar;
     float yScalar;
 
@@ -31,7 +31,7 @@ public:
 
         const float p1x = 0.0f, p1y = 0.0f;
         const float p2x = 0.0f, p2y = 1.0f;
-        const float angle1 = (fov / 2) * degToPi;
+        const float angle1 = (fov / 2) * degToRad;
 
         const float u = p2x - p1x, v = p2y - p1y;
         const float a3 = sqrt(u * u + v * v);
