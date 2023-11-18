@@ -41,15 +41,72 @@ protected:
         //   * make sure that your shading frame stays orthonormal!
         // * if m_smoothNormals is false, use the geometrical normal (can be computed from the vertex positions)
 
+        const Vector3i indices = m_triangles[primitiveIndex];
+        const Vertex v0V = m_vertices[indices.x()];
+        const Vertex v1V = m_vertices[indices.y()];
+        const Vertex v2V = m_vertices[indices.z()];
+        const Point v0 = v0V.position;
+        const Point v1 = v1V.position;
+        const Point v2 = v2V.position;
 
+        const Vector v0v1 = v1 - v0;
+        const Vector v0v2 = v2 - v0;
+        const Vector pvec = ray.direction.cross(v0v2);
+        const float det = v0v1.dot(pvec);
+        if (det < Epsilon) {
+            return false;
+        }
+        const float invDet = 1 / det;
+
+        const Vector tvec = ray.origin - v0;
+        const float u = tvec.dot(pvec) * invDet;
+        if (u < Epsilon || u > 1) {
+            return false;
+        }
+
+        const Vector qvec = tvec.cross(v0v1);
+        const float v = ray.direction.dot(qvec) * invDet;
+        if (v < Epsilon || v > 1 || (u + v) > 1) {
+            return false;
+        }
+
+        its.t = v0v2.dot(qvec) * invDet;
+        its.position = ray(its.t);
+
+        Vector normal;
+        if (m_smoothNormals) {
+            const Vertex interpolatedVertex = Vertex::interpolate({u, v}, v0V, v1V, v2V);
+            normal = interpolatedVertex.normal.normalized();
+        } else {
+            normal = v0v1.cross(v0v2).normalized();
+        }
+        its.frame = Frame(normal);
+        its.frame.normal = normal;
+
+        its.pdf = 0.0f;
+
+        return true;
     }
 
     Bounds getBoundingBox(int primitiveIndex) const override {
-        NOT_IMPLEMENTED
+        const Vector3i indices = m_triangles[primitiveIndex];
+        const Point v0 = m_vertices[indices.x()].position;
+        const Point v1 = m_vertices[indices.y()].position;
+        const Point v2 = m_vertices[indices.z()].position;
+
+        return {elementwiseMin(v0, elementwiseMin(v1, v2)),
+                elementwiseMax(v0, elementwiseMin(v1, v2))};
     }
 
     Point getCentroid(int primitiveIndex) const override {
-        NOT_IMPLEMENTED
+        const Vector3i indices = m_triangles[primitiveIndex];
+        const Point v0 = m_vertices[indices.x()].position;
+        const Point v1 = m_vertices[indices.y()].position;
+        const Point v2 = m_vertices[indices.z()].position;
+
+        return {(v0.x() + v1.x() + v2.x()) / 3.0f,
+                (v0.y() + v1.y() + v2.y()) / 3.0f,
+                (v0.z() + v1.z() + v2.z()) / 3.0f};
     }
 
 public:

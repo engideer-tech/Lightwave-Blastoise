@@ -5,6 +5,7 @@ namespace lightwave {
  * @brief A sphere at the origin of its local coordinate system with the radius 1.
  */
 class Sphere : public Shape {
+private:
     /**
      * Sets the SurfaceEvent data for an Intersection or AreaSample of this object.
      * @param surf pointer to the SurfaceEvent to be populated
