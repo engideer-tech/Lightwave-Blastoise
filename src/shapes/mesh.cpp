@@ -53,7 +53,7 @@ protected:
         const Vector v0v2 = v2 - v0;
         const Vector pvec = ray.direction.cross(v0v2);
         const float det = v0v1.dot(pvec);
-        if (det < Epsilon) {
+        if (abs(det) < Epsilon) {
             return false;
         }
         const float invDet = 1 / det;
@@ -95,7 +95,7 @@ protected:
         const Point v2 = m_vertices[indices.z()].position;
 
         return {elementwiseMin(v0, elementwiseMin(v1, v2)),
-                elementwiseMax(v0, elementwiseMin(v1, v2))};
+                elementwiseMax(v0, elementwiseMax(v1, v2))};
     }
 
     Point getCentroid(int primitiveIndex) const override {
