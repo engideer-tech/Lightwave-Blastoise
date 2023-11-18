@@ -34,13 +34,11 @@ protected:
         return int(m_triangles.size());
     }
 
+    /**
+     * Calculates whether the intersection happened and its location using the Möller-Trumbore algorithm.
+     * If the `smooth` property on the mesh is set, the intersection normals are interpolated (Gouraud shading).
+     */
     bool intersect(int primitiveIndex, const Ray& ray, Intersection& its, Sampler& rng) const override {
-        // hints:
-        // * use m_triangles[primitiveIndex] to get the vertex indices of the triangle that should be intersected
-        // * if m_smoothNormals is true, interpolate the vertex normals from m_vertices
-        //   * make sure that your shading frame stays orthonormal!
-        // * if m_smoothNormals is false, use the geometrical normal (can be computed from the vertex positions)
-
         const Vector3i indices = m_triangles[primitiveIndex];
         const Vertex v0V = m_vertices[indices.x()];
         const Vertex v1V = m_vertices[indices.y()];
@@ -70,8 +68,12 @@ protected:
             return false;
         }
 
-        its.t = v0v2.dot(qvec) * invDet;
-        its.position = ray(its.t);
+        const float t = v0v2.dot(qvec) * invDet;
+        if (t < Epsilon || t > its.t) {
+            return false;
+        }
+        its.t = t;
+        its.position = ray(t);
 
         Vector normal;
         if (m_smoothNormals) {
@@ -83,7 +85,10 @@ protected:
         its.frame = Frame(normal);
         its.frame.normal = normal;
 
-        its.pdf = 0.0f;
+        its.uv.x() = u;
+        its.uv.y() = v;
+
+        its.pdf = 0.0f; // TODO
 
         return true;
     }
