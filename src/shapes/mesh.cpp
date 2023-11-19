@@ -83,10 +83,8 @@ protected:
             normal = v0v1.cross(v0v2).normalized();
         }
         its.frame = Frame(normal);
-        its.frame.normal = normal;
 
-        its.uv.x() = u;
-        its.uv.y() = v;
+        its.uv = {u, v};
 
         its.pdf = 0.0f; // TODO
 

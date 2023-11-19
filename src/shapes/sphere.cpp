@@ -15,10 +15,7 @@ private:
         surf.position = position;
 
         // TODO: add UV mapping once it is known how spheres are supposed to be unwrapped for Lightwave
-
-        const Vector normal = Vector(position).normalized();
-        surf.frame = Frame(normal);
-        surf.frame.normal = normal;
+        surf.frame = Frame(Vector(position).normalized());
 
         surf.pdf = 0.0f; // TODO
     }
