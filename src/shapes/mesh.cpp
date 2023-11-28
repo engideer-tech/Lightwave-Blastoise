@@ -58,13 +58,13 @@ protected:
 
         const Vector tvec = ray.origin - v0;
         const float u = tvec.dot(pvec) * invDet;
-        if (u < Epsilon || u > 1) {
+        if (u < 0 || u > 1) {
             return false;
         }
 
         const Vector qvec = tvec.cross(v0v1);
         const float v = ray.direction.dot(qvec) * invDet;
-        if (v < Epsilon || v > 1 || (u + v) > 1) {
+        if (v < 0 || v > 1 || (u + v) > 1) {
             return false;
         }
 
