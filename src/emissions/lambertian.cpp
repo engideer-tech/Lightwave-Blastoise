@@ -11,7 +11,13 @@ public:
     }
 
     EmissionEval evaluate(const Point2 &uv, const Vector &wo) const override {
-        NOT_IMPLEMENTED
+        //NOT_IMPLEMENTED
+        Intersection its;
+        Vector outgoing_direction = squareToCosineHemisphere(Point2(wo.x(),wo.y()));
+        Color emission = m_emission->evaluate(uv);
+        EmissionEval evaluate;
+        evaluate.value = emission;
+        return evaluate;
     }
 
     std::string toString() const override {

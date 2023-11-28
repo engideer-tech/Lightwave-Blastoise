@@ -13,15 +13,16 @@ public:
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
         //NOT_IMPLEMENTED
+        Intersection its;
         Vector outgoing_direction = squareToCosineHemisphere(Point2(wo.x(),wo.y())).normalized();
+        float pdf_out = abs(cosineHemispherePdf(outgoing_direction))/(2*Pi);
         Vector wi = squareToCosineHemisphere(rng.next2D()).normalized();
-        float pdf = cosineHemispherePdf(wi)/(2*Pi);
-        Color bsdf_val = m_albedo->evaluate(uv);
-        bsdf_val *= (outgoing_direction.z()*wi.z())/pdf;
+        float pdf_sampled = abs(cosineHemispherePdf(wi));
+        Color albedo = m_albedo->evaluate(uv);
 
         BsdfSample sample;
         sample.wi = wi;
-        sample.weight = bsdf_val;
+        sample.weight = albedo*(pdf_out/pdf_sampled);
         return sample;
     }
 
