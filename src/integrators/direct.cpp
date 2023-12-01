@@ -1,51 +1,36 @@
-//
-// Created by chinm on 26-11-2023.
-//
 #include <lightwave.hpp>
 
 namespace lightwave {
-/**
- * Renders objects by using their surface normal coordinates as RGB color values.
- */
+
 class DirectIntegrator : public SamplingIntegrator {
 private:
-    bool remap;
+    static constexpr short maxBounces = 1;
 
 public:
-    explicit DirectIntegrator(const Properties &properties) : SamplingIntegrator(properties) {
-        remap = properties.get<bool>("remap", true);
-    }
+    explicit DirectIntegrator(const Properties& properties) : SamplingIntegrator(properties) {}
 
-    Color Li(const Ray &ray, Sampler &rng) override {
+    Color Li(const Ray& ray, Sampler& rng) override {
         Ray currentRay = ray;
-        Color finalColor(0.0f); // Initialize final color
-        int maxBounces = 1;
-        for (int bounce = 0; bounce < maxBounces; ++bounce) {
-            Intersection intersection = m_scene->intersect(currentRay, rng);
+        Color result(1.0f);
 
-            if (!intersection) {
-                // No intersection; return background color
-                BackgroundLightEval backgroundLightEval = m_scene->evaluateBackground((currentRay.direction));
-                finalColor = finalColor + backgroundLightEval.value;
-                break;
+        for (short bounce = 0; bounce <= maxBounces; bounce++) {
+            const Intersection its = m_scene->intersect(currentRay, rng);
+
+            if (!its) {
+                const BackgroundLightEval bgLight = m_scene->evaluateBackground(currentRay.direction);
+                return result * bgLight.value;
             }
 
-            // Sample the BSDF
-            BsdfSample bsdfSample = intersection.sampleBsdf(rng);
-
-            // Update the ray direction and weight based on the BSDF sample
-            currentRay = Ray(intersection.position, bsdfSample.wi);
-            finalColor += bsdfSample.weight; // Accumulate contribution
-
-            // Check if the secondary ray escapes the scene
-            if (!m_scene->intersect(currentRay, rng)) {
-                BackgroundLightEval backgroundLightEval = m_scene->evaluateBackground((currentRay.direction));
-                finalColor = finalColor + backgroundLightEval.value;
-                break;
+            if (bounce == maxBounces) {
+                return result;
             }
+
+            const BsdfSample bsdfSample = its.sampleBsdf(rng);
+            currentRay = Ray(its.position, bsdfSample.wi);
+            result *= bsdfSample.weight;
         }
 
-        return finalColor;
+        return result;
     }
 
     std::string toString() const override {

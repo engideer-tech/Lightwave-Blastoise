@@ -74,8 +74,7 @@ set(MY_TARGET_NAME Blastoise) # Change `unnamed` to your favourite own executabl
 
 find_package(OpenImageDenoise)
 
-add_executable(${MY_TARGET_NAME} ${SOURCE_FILES}
-        src/textures/checkerboard.cpp)
+add_executable(${MY_TARGET_NAME} ${SOURCE_FILES})
 target_compile_definitions(${MY_TARGET_NAME} PUBLIC "${FEATURES};${EXTRA_DEFINES}")
 target_link_libraries(${MY_TARGET_NAME} PRIVATE miniz Threads::Threads)
 target_include_directories(${MY_TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
