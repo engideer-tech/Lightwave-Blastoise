@@ -2,29 +2,22 @@
 
 namespace lightwave {
 
-class Checkerboard: public Texture {
+class Checkerboard : public Texture {
+private:
     Color m_color0;
     Color m_color1;
-    Vector m_scale;
+    Point2 m_scale;
 
 public:
-    Checkerboard(const Properties &properties) {
-
+    explicit Checkerboard(const Properties& properties) {
         m_color0 = properties.get<Color>("color0");
         m_color1 = properties.get<Color>("color1");
-
-        // Parse scale vector
-        m_scale = properties.get<Vector>("scale");
-        std::cout<<"color0"<<m_color0<<std::endl<<"color1"<<m_color1<<std::endl<<"scale"<<m_scale;
-
-        // Parse scale vector
-        m_scale = properties.get<Vector>("scale", Vector());
-
+        m_scale = properties.get<Point2>("scale", Point2(1.0f));
     }
 
-    Color evaluate(const Point2 &uv) const override {
+    Color evaluate(const Point2& uv) const override {
         // Apply scale to UV coordinates
-        Vector scaledUV = Vector(uv.x(),uv.y())*(m_scale);
+        Point2 scaledUV = {uv.x() * m_scale.x(), uv.y() * m_scale.y()};
 
         // Calculate checkerboard pattern
         bool isEven = static_cast<int>(floor(scaledUV.x())) % 2 == 0;
@@ -48,4 +41,4 @@ public:
 
 } // namespace lightwave
 
-REGISTER_TEXTURE(Checkerboard,"checkerboard")
+REGISTER_TEXTURE(Checkerboard, "checkerboard")
