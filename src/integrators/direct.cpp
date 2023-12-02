@@ -13,53 +13,26 @@ public:
         Ray currentRay = ray;
         Color result(1.0f);
 
-        // for (short bounce = 0; bounce <= maxBounces; bounce++) {
-        //     const Intersection its = m_scene->intersect(currentRay, rng);
-        //
-        //     if (!its) {
-        //         const BackgroundLightEval bgLight = m_scene->evaluateBackground(currentRay.direction);
-        //         return result * bgLight.value;
-        //     }
-        //
-        //     // if (bounce == maxBounces) {
-        //     //     return result;
-        //     // }
-        //
-        //     const BsdfSample bsdfSample = its.sampleBsdf(rng);
-        //     if (bsdfSample.isInvalid()) {
-        //         return result;
-        //     }
-        //
-        //     currentRay = Ray(its.position, bsdfSample.wi);
-        //     result *= bsdfSample.weight;
-        // }
+        for (short bounce = 0; bounce <= maxBounces; bounce++) {
+            const Intersection its = m_scene->intersect(currentRay, rng);
 
-        Intersection its = m_scene->intersect(currentRay, rng);
-        if (!its) {
-            const BackgroundLightEval bgLight = m_scene->evaluateBackground(currentRay.direction);
-            return result * bgLight.value;
+            if (!its) {
+                const BackgroundLightEval bgLight = m_scene->evaluateBackground(currentRay.direction);
+                return result * bgLight.value;
+            }
+
+            if (bounce == maxBounces) {
+                return result * 0.0f;
+            }
+
+            const BsdfSample bsdfSample = its.sampleBsdf(rng);
+            if (bsdfSample.isInvalid()) {
+                return result;
+            }
+
+            currentRay = Ray(its.position, bsdfSample.wi);
+            result *= bsdfSample.weight;
         }
-
-        BsdfSample bsdfSample = its.sampleBsdf(rng);
-        if (bsdfSample.isInvalid()) {
-            return result;
-        }
-        // if (bsdfSample.weight == )
-        currentRay = Ray(its.position, bsdfSample.wi);
-        result *= bsdfSample.weight;
-
-
-        its = m_scene->intersect(currentRay, rng);
-        if (!its) {
-            const BackgroundLightEval bgLight = m_scene->evaluateBackground(currentRay.direction);
-            return result * bgLight.value;
-        }
-
-        bsdfSample = its.sampleBsdf(rng);
-        if (bsdfSample.isInvalid()) {
-            return result;
-        }
-        result *= bsdfSample.weight;
 
         return result;
     }
