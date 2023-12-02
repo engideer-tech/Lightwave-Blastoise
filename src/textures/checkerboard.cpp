@@ -9,9 +9,17 @@ class Checkerboard: public Texture {
 
 public:
     Checkerboard(const Properties &properties) {
-        m_color0 = properties.get<Color>("color0", Color(0));
-        m_color1 = properties.get<Color>("color1", Color(1));
-        //m_scale = properties.get<Vector>("scale", Vector());
+
+        m_color0 = properties.get<Color>("color0");
+        m_color1 = properties.get<Color>("color1");
+
+        // Parse scale vector
+        m_scale = properties.get<Vector>("scale");
+        std::cout<<"color0"<<m_color0<<std::endl<<"color1"<<m_color1<<std::endl<<"scale"<<m_scale;
+
+        // Parse scale vector
+        m_scale = properties.get<Vector>("scale", Vector());
+
     }
 
     Color evaluate(const Point2 &uv) const override {
