@@ -39,53 +39,39 @@ public:
 
     Color evaluate(const Point2& uv) const override {
         float u = uv.x();
-        float v = 1.0-uv.y();
+        float v = 1.0f - uv.y();
 
         switch (m_border) {
             case BorderMode::Clamp:
-                // u = std::clamp(uv.x(), 0.0f, float(m_image->resolution().x()));
-                // v = std::clamp(uv.y(), 0.0f, float(m_image->resolution().y()));
                 u = clamp(u, 0.0f, 1.0f);
                 v = clamp(v, 0.0f, 1.0f);
                 break;
 
             case BorderMode::Repeat:
-                // u = std::fmod(u, m_image->resolution().x());
-                // v = std::fmod(v, m_image->resolution().y());
                 u = std::fmod(u, 1.0f);
                 v = std::fmod(v, 1.0f);
-                if (u < 0) u += 1.0f;
-                if (v < 0) v += 1.0f;
+                if (u < 0.0f) u += 1.0f;
+                if (v < 0.0f) v += 1.0f;
                 break;
         }
 
-        const int tu = static_cast<int>(u * static_cast<float>(m_image->resolution().x()));
-        const int tv = static_cast<int>(v * static_cast<float>(m_image->resolution().y()));
+        const int tx = static_cast<int>(floorf(u * static_cast<float>(m_image->resolution().x())));
+        const int ty = static_cast<int>(floorf(v * static_cast<float>(m_image->resolution().y())));
 
         if (m_filter == FilterMode::Nearest) {
-//            int newx = static_cast<int>(floorf(tu));
-//            int newy = static_cast<int>(floorf(tv));
-//
-//            const float diffx = tu - static_cast<float>(newx);
-//            const float diffy = tv - static_cast<float>(newy);
-//
-//            if (diffx > 0.5) newx++;
-//            if (diffy > 0.5) newy++;
-//
-//            return m_image->get(Point2i(tu, tv))*m_exposure;
+            const int clampedTx = std::min(tx, m_image->resolution().x() - 1);
+            const int clampedTy = std::min(ty, m_image->resolution().y() - 1);
 
-             int nearestU = static_cast<int>(std::round(tu));
-             int nearestV = static_cast<int>(std::round(tv));
+            return m_image->get(Point2i(clampedTx, clampedTy)) * m_exposure;
+        }
 
-             //std::cout<<"interpolated color nearest"<<m_image->get(Point2i(nearestU,nearestV))*m_exposure<<std::endl;
-             return m_image->get(Point2i(nearestU,nearestV))*m_exposure;
-        } else if (m_filter == FilterMode::Bilinear) {
+        if (m_filter == FilterMode::Bilinear) {
 //            const int u0 = static_cast<int>(floorf(tu));
 //            const int v0 = static_cast<int>(floorf(tv));
-            const int u0 = std::max(tu, 0);
-            const int v0 = std::max(tv, 0);
-            const int u1 = std::min(tu + 1, m_image->resolution().x() - 1);
-            const int v1 = std::min(tv + 1, m_image->resolution().y() - 1);
+            const int u0 = std::max(tx, 0);
+            const int v0 = std::max(ty, 0);
+            const int u1 = std::min(tx + 1, m_image->resolution().x() - 1);
+            const int v1 = std::min(ty + 1, m_image->resolution().y() - 1);
 
             const float s = u * static_cast<float>(m_image->resolution().x() - 1) - static_cast<float>(u0);
             const float t = v * static_cast<float>(m_image->resolution().y() - 1) - static_cast<float>(v0);
@@ -98,15 +84,47 @@ public:
             const Color texel11 = m_image->get(Point2i(u1, v1));
 
 
-
             const Color interpolated_color = (1 - s) * (1 - t) * texel00
                                              + s * (1 - t) * texel10
                                              + (1 - s) * t * texel01
                                              + s * t * texel11;
             //std::cout<<"interpolated color"<<interpolated_color*m_exposure<<std::endl;
-            return interpolated_color*m_exposure;
+            return interpolated_color * m_exposure;
         }
-        return Color(0.0f,0.0f,0.0f);
+
+
+
+        // float tu = uv.x();
+        // float tv = 1 - uv.y();
+        //
+        //
+        // int x, y;
+        // switch (m_filter) {
+        //     case FilterMode::Nearest:
+        //         x = static_cast<int>(floorf(tu * static_cast<float>(m_image->resolution().x())));
+        //         y = static_cast<int>(floorf(tv * static_cast<float>(m_image->resolution().y())));
+        //         break;
+        //     case FilterMode::Bilinear:
+        //         return {1.0f, 0.0f, 0.0f};
+        // }
+        //
+        // switch (m_border) {
+        //     case BorderMode::Clamp:
+        //         tu = clamp(tu, 0.0f, 1.0f);
+        //         tv = clamp(tv, 0.0f, 1.0f);
+        //         break;
+        //
+        //     case BorderMode::Repeat:
+        //         tu = std::fmod(tu, 1.0f);
+        //         tv = std::fmod(tv, 1.0f);
+        //         break;
+        // }
+        //
+        // Color fuck = (*m_image)(Point2i(x, y));
+        // std::cout << tfm::format("img res %s x %s\nuv %s tu %s tv %s x %s y %s\ncolor %s\n",
+        //                          m_image->resolution().x(), m_image->resolution().y(), uv, tu, tv, x, y, fuck);
+        //
+        // return fuck;
     }
 
     std::string toString() const override {
