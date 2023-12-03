@@ -47,15 +47,57 @@ public:
         float v = uv.y();
         switch (m_border) {
             case BorderMode::Clamp:
-                if(u<0) u = 0;
-                if(u>m_image->resolution().x()) u = m_image->resolution().x()-1;
-                if(v<0) v = 0;
-                if(v>m_image->resolution().y()) u = m_image->resolution().y()-1;
+                u = std::clamp(uv.x(), 0.0f, float(m_image->resolution().x()));
+                v = std::clamp(uv.y(), 0.0f, float(m_image->resolution().y()));
                 break;
             case BorderMode::Repeat:
                 u = std::fmod(u,m_image->resolution().x());
                 v = std::fmod(v,m_image->resolution().y());
+                if (u < 0) u += 1.0f;
+                if (v < 0) v += 1.0f;
                 break;
+            default:
+                break;
+        }
+        float u_texel = u * float(m_image->resolution().x())-1.0;
+        float v_texel = v * float(m_image->resolution().y())-1.0;
+        if(m_filter==FilterMode::Nearest){
+            int newx = floor(u_texel);
+            int newy = floor(v_texel);
+
+            float diffx = u_texel - newx;
+            float diffy = v_texel - newy;
+
+            if (diffx > 0.5) newx++;
+            if (diffy > 0.5) newy++;
+
+            return m_image->get(Point2i(newx, newy));
+
+//            int nearestU = static_cast<int>(std::round(u_texel));
+//            int nearestV = static_cast<int>(std::round(v_texel));
+//            //std::cout<<"interpolated color nearest"<<m_image->get(Point2i(nearestU,nearestV))*m_exposure<<std::endl;
+//            return m_image->get(Point2i(nearestU,nearestV))*m_exposure;
+        }else if(m_filter==FilterMode::Bilinear){
+            int u0 = static_cast<int>(std::floor(u_texel));
+            int v0 = static_cast<int>(std::floor(v_texel));
+            int u1 = std::min(u0 + 1, m_image->resolution().x() - 1);
+            int v1 = std::min(v0 + 1, m_image->resolution().y() - 1);
+
+            float s = u_texel - u0;
+            float t = v_texel - v0;
+
+            Color texel00 = m_image->get(Point2i(u0,v0));
+            Color texel10 = m_image->get(Point2i(u1,v0));
+            Color texel01 = m_image->get(Point2i(u0,v1));
+            Color texel11 = m_image->get(Point2i(u1,v1));
+
+            Color interpolated_color = (1 - s) * (1 - t) * texel00
+                                        +s * (1 - t) * texel10
+                                        +(1 - s) * t * texel01
+                                        +s * t * texel11;
+            //std::cout<<"interpolated color"<<interpolated_color*m_exposure<<std::endl;
+            return interpolated_color;
+
         }
     }
 
