@@ -14,13 +14,13 @@ private:
     inline static void setSurfaceEventData(SurfaceEvent& surf, const Point& position) {
         surf.position = position;
 
-        //
-        Vector normal = Vector(position.x(),position.y(),position.z());
-        surf.frame = Frame(Vector(position).normalized());
-        surf.uv.x() = atan2(normal.x(),normal.z())/(2*Pi)+0.5;
-        surf.uv.y() = (acos(normal.y())/Pi)+0.5;
-        surf.pdf = 0.0f;
+        const Vector normal = Vector(position).normalized();
+        surf.frame = Frame(normal);
 
+        surf.uv.x() = atan2f(normal.x(), normal.z()) / (2.0f * Pi) + 0.5f;
+        surf.uv.y() = (acosf(normal.y()) / Pi) + 0.5f;
+
+        surf.pdf = 0.0f; // TODO
     }
 
 public:

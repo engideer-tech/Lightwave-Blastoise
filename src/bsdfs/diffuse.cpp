@@ -1,7 +1,12 @@
 #include <lightwave.hpp>
 
 namespace lightwave {
-
+/**
+ * Performs a simple BRDF/BSDF computation for a simple diffuse (Lambertian) material. Works "in reverse" by generating
+ * a random incidence vector for a given reflectance vector. Due to this being a diffuse material, the reflectance
+ * vector is not needed. The generation of the incidence vector isn't fully random: the density function skews towards
+ * the middle of the shading hemisphere.
+ */
 class Diffuse : public Bsdf {
 private:
     ref<Texture> m_albedo;

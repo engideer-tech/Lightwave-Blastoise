@@ -1,7 +1,10 @@
 #include <lightwave.hpp>
 
 namespace lightwave {
-
+/**
+ * Renders objects by tracing a single path the camera of `maxBounces` length at a time. The path originates at the
+ * camera and collects reflectance information at each bounce.
+ */
 class DirectIntegrator : public SamplingIntegrator {
 private:
     static constexpr short maxBounces = 1;
@@ -11,18 +14,19 @@ public:
 
     Color Li(const Ray& ray, Sampler& rng) override {
         Ray currentRay = ray;
-        Color result(1.0f);
+        Color result = Color::white();
 
         for (short bounce = 0; bounce <= maxBounces; bounce++) {
             const Intersection its = m_scene->intersect(currentRay, rng);
-
             if (!its) {
                 const BackgroundLightEval bgLight = m_scene->evaluateBackground(currentRay.direction);
                 return result * bgLight.value;
             }
 
-            if (bounce == maxBounces) {
-                return result * 0.0f;
+            // If the last bounce hits an object which is not a light, the path turns black.
+            // If we hit a light, we terminate the path.
+            if (bounce == maxBounces || its.instance->emission()) {
+                return its.evaluateEmission();
             }
 
             const BsdfSample bsdfSample = its.sampleBsdf(rng);
