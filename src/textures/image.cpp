@@ -48,6 +48,8 @@ public:
                 break;
 
             case BorderMode::Repeat:
+                // u = std::fmod(u, m_image->resolution().x());
+                // v = std::fmod(v, m_image->resolution().y());
                 u = std::fmod(u, 1.0f);
                 v = std::fmod(v, 1.0f);
                 if (u < 0.0f) u += 1.0f;
@@ -79,9 +81,10 @@ public:
 //            const float t = tv - static_cast<float>(v0);
 
             const Color texel00 = m_image->get(Point2i(u0, v0));
-            const Color texel10 = m_image->get(Point2i(u1, v0));
-            const Color texel01 = m_image->get(Point2i(u0, v1));
+            const Color texel10 = m_image->get(Point2i(u0, v1));
+            const Color texel01 = m_image->get(Point2i(u1, v0));
             const Color texel11 = m_image->get(Point2i(u1, v1));
+
 
 
             const Color interpolated_color = (1 - s) * (1 - t) * texel00
