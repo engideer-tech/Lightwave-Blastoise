@@ -43,7 +43,21 @@ public:
     }
 
     Color evaluate(const Point2 &uv) const override {
-        NOT_IMPLEMENTED
+        float u = uv.x();
+        float v = uv.y();
+        switch (m_border) {
+            case BorderMode::Clamp:
+                if(u<0) u = 0;
+                if(u>m_image->resolution().x()) u = m_image->resolution().x()-1;
+                if(v<0) v = 0;
+                if(v>m_image->resolution().y()) u = m_image->resolution().y()-1;
+                break;
+
+            case BorderMode::Repeat:
+                u = std::fmod(u,m_image->resolution().x());
+                v = std::fmod(v,m_image->resolution().y());
+                break;
+        }
     }
 
     std::string toString() const override {
