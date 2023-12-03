@@ -44,6 +44,9 @@ public:
                 });
     }
 
+    /**
+     * TODO: write doc
+     */
     Color evaluate(const Point2& uv) const override {
         float xScaled = uv.x() * imageWidth;
         float yScaled = (1.0f - uv.y()) * imageHeight;
@@ -67,43 +70,36 @@ public:
             xScaled -= 0.5f;
             yScaled -= 0.5f;
 
-            int xMax, xMin, yMax, yMin;
             if (m_border == BorderMode::Clamp) {
                 xScaled = std::clamp(xScaled, 0.0f, imageWidth - 1.0f);
                 yScaled = std::clamp(yScaled, 0.0f, imageHeight - 1.0f);
-
-                xMax = std::clamp(static_cast<int>(ceilf(xScaled)), 0, m_image->resolution().x() - 1);
-                xMin = std::clamp(static_cast<int>(floorf(xScaled)), 0, m_image->resolution().x() - 1);
-                yMax = std::clamp(static_cast<int>(ceilf(yScaled)), 0, m_image->resolution().y() - 1);
-                yMin = std::clamp(static_cast<int>(floorf(yScaled)), 0, m_image->resolution().y() - 1);
             } else {
-                xScaled = fmodf(xScaled, imageWidth);
-                if (xScaled < 0.0f) xScaled += imageWidth;
-                yScaled = fmodf(yScaled, imageWidth);
-                if (yScaled < 0.0f) yScaled += imageHeight;
-
-                xMax = static_cast<int>(std::roundf(xScaled)) % m_image->resolution().x();
-                xMin = static_cast<int>(std::roundf(xScaled)) - 1;
-                if (xMin < 0) xMin = m_image->resolution().x() - 1;
-                yMax = static_cast<int>(std::roundf(yScaled)) % m_image->resolution().y();
-                yMin = static_cast<int>(std::roundf(yScaled)) - 1;
-                if (yMin < 0) yMin = m_image->resolution().y() - 1;
+                xScaled = xScaled - floorf(xScaled / imageWidth) * imageWidth;
+                yScaled = yScaled - floorf(yScaled / imageHeight) * imageHeight;
             }
 
-            const Color texelA = m_image->get(Point2i(xMin, yMin));
-            const Color texelB = m_image->get(Point2i(xMax, yMin));
-            const Color texelC = m_image->get(Point2i(xMin, yMax));
-            const Color texelD = m_image->get(Point2i(xMax, yMax));
+            const int xMin = static_cast<int>(floorf(xScaled));
+            const int yMin = static_cast<int>(floorf(yScaled));
+            int xMax = xMin + 1;
+            int yMax = yMin + 1;
 
-            const float xMaxWeight = xScaled - floorf(xScaled);
+            if (m_border == BorderMode::Clamp) {
+                xMax = std::clamp(xMax, 0, m_image->resolution().x() - 1);
+                yMax = std::clamp(yMax, 0, m_image->resolution().y() - 1);
+            } else {
+                xMax = xMax - static_cast<int>(floorf(static_cast<float>(xMax) / imageWidth)) * m_image->resolution().x();
+                yMax = yMax - static_cast<int>(floorf(static_cast<float>(yMax) / imageHeight)) * m_image->resolution().y();
+            }
+
+            const float xMaxWeight = xScaled - static_cast<float>(xMin);
             const float xMinWeight = 1.0f - xMaxWeight;
-            const float yMaxWeight = yScaled - floorf(yScaled);
+            const float yMaxWeight = yScaled - static_cast<float>(yMin);
             const float yMinWeight = 1.0f - yMaxWeight;
 
-            const Color interpolatedColor = xMinWeight * yMinWeight * texelA
-                                            + xMaxWeight * yMinWeight * texelB
-                                            + xMinWeight * yMaxWeight * texelC
-                                            + xMaxWeight * yMaxWeight * texelD;
+            const Color interpolatedColor = xMinWeight * yMinWeight * m_image->get(Point2i(xMin, yMin))
+                                            + xMinWeight * yMaxWeight * m_image->get(Point2i(xMin, yMax))
+                                            + xMaxWeight * yMinWeight * m_image->get(Point2i(xMax, yMin))
+                                            + xMaxWeight * yMaxWeight * m_image->get(Point2i(xMax, yMax));
 
             return interpolatedColor * m_exposure;
         }
