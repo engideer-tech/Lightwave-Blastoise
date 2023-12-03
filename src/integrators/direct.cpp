@@ -26,7 +26,7 @@ public:
             // If the last bounce hits an object which is not a light, the path turns black.
             // If we hit a light, we terminate the path.
             if (bounce == maxBounces || its.instance->emission()) {
-                return its.evaluateEmission();
+                return result * its.evaluateEmission();
             }
 
             const BsdfSample bsdfSample = its.sampleBsdf(rng);

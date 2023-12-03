@@ -11,6 +11,7 @@ namespace lightwave {
  * triangles are combined in a single shape.
  */
 class TriangleMesh : public AccelerationStructure {
+private:
     /**
      * @brief The index buffer of the triangles.
      * The n-th element corresponds to the n-th triangle, and each component of the element corresponds to one
@@ -28,6 +29,7 @@ class TriangleMesh : public AccelerationStructure {
     std::filesystem::path m_originalPath;
     /// @brief Whether to interpolate the normals from m_vertices, or report the geometric normal instead.
     bool m_smoothNormals;
+    static constexpr float SmallerEpsilon = 1e-8f;
 
 protected:
     int numberOfPrimitives() const override {
@@ -51,7 +53,7 @@ protected:
         const Vector v0v2 = v2 - v0;
         const Vector pvec = ray.direction.cross(v0v2);
         const float det = v0v1.dot(pvec);
-        if (abs(det) < Epsilon) {
+        if (abs(det) < SmallerEpsilon) {
             return false;
         }
         const float invDet = 1 / det;
@@ -75,16 +77,12 @@ protected:
         its.t = t;
         its.position = ray(t);
 
-        Vector normal;
-        if (m_smoothNormals) {
-            const Vertex interpolatedVertex = Vertex::interpolate({u, v}, v0V, v1V, v2V);
-            normal = interpolatedVertex.normal.normalized();
-        } else {
-            normal = v0v1.cross(v0v2).normalized();
-        }
+        const Vertex interpolatedVertex = Vertex::interpolate({u, v}, v0V, v1V, v2V);
+
+        const Vector normal = m_smoothNormals ? interpolatedVertex.normal.normalized() : v0v1.cross(v0v2).normalized();
         its.frame = Frame(normal);
 
-        its.uv = {u, v};
+        its.uv = interpolatedVertex.texcoords;
 
         its.pdf = 0.0f; // TODO
 
