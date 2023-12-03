@@ -6,13 +6,13 @@ class Checkerboard : public Texture {
 private:
     Color m_color0;
     Color m_color1;
-    Vector2 m_scale;
+    Point2 m_scale;
 
 public:
     explicit Checkerboard(const Properties& properties) {
         m_color0 = properties.get<Color>("color0");
         m_color1 = properties.get<Color>("color1");
-        m_scale = properties.get<Vector2>("scale");
+        m_scale = properties.get<Point2>("scale", Point2(1.0f));
     }
 
     Color evaluate(const Point2& uv) const override {
@@ -20,8 +20,8 @@ public:
         Point2 scaledUV = {uv.x() * m_scale.x(), uv.y() * m_scale.y()};
 
         // Calculate checkerboard pattern
-        bool isEven = static_cast<int>(floor(scaledUV.x())) % 2 == 0;
-        bool isEven2 = static_cast<int>(floor(scaledUV.y())) % 2 == 0;
+        bool isEven = static_cast<int>(floorf(scaledUV.x())) % 2 == 0;
+        bool isEven2 = static_cast<int>(floorf(scaledUV.y())) % 2 == 0;
         if ((isEven && isEven2) || (!isEven && !isEven2)) {
             return m_color0;
         } else {
