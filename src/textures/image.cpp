@@ -97,39 +97,6 @@ public:
             //std::cout<<"interpolated color"<<interpolated_color*m_exposure<<std::endl;
             return interpolated_color;
         }
-
-
-
-        // float tu = uv.x();
-        // float tv = 1 - uv.y();
-        //
-        // switch (m_border) {
-        //     case BorderMode::Clamp:
-        //         tu = clamp(tu, 0.0f, 1.0f);
-        //         tv = clamp(tv, 0.0f, 1.0f);
-        //         break;
-        //
-        //     case BorderMode::Repeat:
-        //         tu = std::fmod(tu, 1.0f);
-        //         tv = std::fmod(tv, 1.0f);
-        //         break;
-        // }
-        //
-        // int a, b;
-        // switch (m_filter) {
-        //     case FilterMode::Nearest:
-        //         a = static_cast<int>(tu * static_cast<float>(m_image->resolution().x()));
-        //         b = static_cast<int>(tv * static_cast<float>(m_image->resolution().y()));
-        //         break;
-        //     case FilterMode::Bilinear:
-        //         return {1.0f, 0.0f, 0.0f};
-        // }
-        //
-        // Color fuck = (*m_image)(Point2i(a, b));
-        // // std::cout << tfm::format("img res %s x %s\nuv %s tu %s tv %s a %s b %s\nColor %s\n",
-        // //                          m_image->resolution().x(), m_image->resolution().y(), uv, tu, tv, a, b, fuck);
-        //
-        // return fuck;
     }
 
     std::string toString() const override {
