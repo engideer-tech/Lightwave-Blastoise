@@ -14,10 +14,13 @@ private:
     inline static void setSurfaceEventData(SurfaceEvent& surf, const Point& position) {
         surf.position = position;
 
-        // TODO: add UV mapping once it is known how spheres are supposed to be unwrapped for Lightwave
+        //
+        Vector normal = Vector(position.x(),position.y(),position.z());
         surf.frame = Frame(Vector(position).normalized());
+        surf.uv.x() = atan2(normal.x(),normal.z())/(2*Pi)+0.5;
+        surf.uv.y() = (acos(normal.y())/Pi)+0.5;
+        surf.pdf = 0.0f;
 
-        surf.pdf = 0.0f; // TODO
     }
 
 public:

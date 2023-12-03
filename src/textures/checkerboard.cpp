@@ -6,13 +6,13 @@ class Checkerboard : public Texture {
 private:
     Color m_color0;
     Color m_color1;
-    Point2 m_scale;
+    Vector2 m_scale;
 
 public:
     explicit Checkerboard(const Properties& properties) {
         m_color0 = properties.get<Color>("color0");
         m_color1 = properties.get<Color>("color1");
-        m_scale = properties.get<Point2>("scale", Point2(1.0f));
+        m_scale = properties.get<Vector2>("scale");
     }
 
     Color evaluate(const Point2& uv) const override {
