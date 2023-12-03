@@ -52,7 +52,6 @@ public:
                 if(v<0) v = 0;
                 if(v>m_image->resolution().y()) u = m_image->resolution().y()-1;
                 break;
-
             case BorderMode::Repeat:
                 u = std::fmod(u,m_image->resolution().x());
                 v = std::fmod(v,m_image->resolution().y());
