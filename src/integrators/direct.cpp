@@ -31,7 +31,7 @@ public:
 
             const BsdfSample bsdfSample = its.sampleBsdf(rng);
             if (bsdfSample.isInvalid()) {
-                return result;
+                return Color::black();
             }
 
             currentRay = Ray(its.position, bsdfSample.wi);

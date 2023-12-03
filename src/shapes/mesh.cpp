@@ -29,7 +29,9 @@ private:
     std::filesystem::path m_originalPath;
     /// @brief Whether to interpolate the normals from m_vertices, or report the geometric normal instead.
     bool m_smoothNormals;
+    /// @brief Used to avoid self-intersections and other Möller-Trumbore artifacts
     static constexpr float SmallerEpsilon = 1e-8f;
+    static constexpr float LargerEpsilon = 1e-4f;
 
 protected:
     int numberOfPrimitives() const override {
@@ -71,7 +73,7 @@ protected:
         }
 
         const float t = v0v2.dot(qvec) * invDet;
-        if (t < Epsilon || t > its.t) {
+        if (t < LargerEpsilon || t > its.t) {
             return false;
         }
         its.t = t;
