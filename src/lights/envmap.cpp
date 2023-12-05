@@ -19,14 +19,15 @@ public:
         Vector2 warped = Vector2(0, 0);
         if (m_transform){
             Vector local_direction;
-            local_direction = m_transform->inverse(Vector(direction));
-            float theta = acosf(clamp(local_direction.y(), -1.0f, 1.0f));
+            local_direction = m_transform->inverse(local_direction);
+            float mag_local_direction = sqrt(local_direction.x()*local_direction.x()+local_direction.y()*local_direction.y()+local_direction.z()*local_direction.z());
+            float theta = acosf(local_direction.y()/mag_local_direction);
             float phi = atan2f(local_direction.z(), local_direction.x());
             //To remap local coordinates to spherical coordinates:
-            float u = phi / (2 * Pi) + 0.5f;
-            u = clamp(u, 0.0f, 1.0f);
-            float v = theta / Pi;
-            v = clamp(v, 0.0f, 1.0f);
+            float u = 1-(phi / (2 * Pi) + 0.5f);
+            //u = clamp(u, 0.0f, 1.0f);
+            float v = (theta / Pi);
+            //v = clamp(v, 0.0f, 1.0f);
             warped = Vector2(u,v);
         }
         
