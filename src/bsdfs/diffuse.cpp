@@ -22,6 +22,7 @@ public:
         const Vector wi = squareToCosineHemisphere(rng.next2D()).normalized();
         const float wiPdf = cosineHemispherePdf(wi);
 
+        // todo: test if we can just return albedo directly
         const Color weight = wiPdf == 0.0f
                              ? Color(0.0f)
                              : albedo * InvPi / cosineHemispherePdf(wi) * Frame::cosTheta(wi);

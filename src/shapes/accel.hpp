@@ -184,6 +184,7 @@ class AccelerationStructure : public Shape {
 
     NodeIndex binning(Node &node, int splitAxis) {
         NOT_IMPLEMENTED
+        // work with centroids of objects, init bounds to outer most centroids
     }
 
     /// @brief Attempts to subdivide a given BVH node.

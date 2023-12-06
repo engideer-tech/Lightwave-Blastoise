@@ -20,6 +20,7 @@ public:
         Point2 scaledUV = {uv.x() * m_scale.x(), uv.y() * m_scale.y()};
 
         // Calculate checkerboard pattern
+        // todo: cast before mod, only compute 1 mod
         bool isEven = static_cast<int>(floorf(scaledUV.x())) % 2 == 0;
         bool isEven2 = static_cast<int>(floorf(scaledUV.y())) % 2 == 0;
         if ((isEven && isEven2) || (!isEven && !isEven2)) {

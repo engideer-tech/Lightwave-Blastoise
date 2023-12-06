@@ -51,6 +51,8 @@ public:
         float xScaled = uv.x() * imageWidth;
         float yScaled = (1.0f - uv.y()) * imageHeight;
 
+        // todo: switch back to switch-case cause the ifs are ugly. also clean up bilinear
+        //  and use consistent mod style
         if (m_filter == FilterMode::Nearest) {
             int xCoord = static_cast<int>(floorf(xScaled));
             int yCoord = static_cast<int>(floorf(yScaled));
@@ -70,6 +72,8 @@ public:
             xScaled -= 0.5f;
             yScaled -= 0.5f;
 
+            // todo: try to convert to int coordinates early and then get 4 neighbors via +/- 0.5 followed by
+            //  additional border handling
             if (m_border == BorderMode::Clamp) {
                 xScaled = std::clamp(xScaled, 0.0f, imageWidth - 1.0f);
                 yScaled = std::clamp(yScaled, 0.0f, imageHeight - 1.0f);

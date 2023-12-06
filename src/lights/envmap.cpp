@@ -16,19 +16,28 @@ public:
     }
 
     BackgroundLightEval evaluate(const Vector &direction) const override {
-        Vector2 warped = Vector2(0, 0);
+        Vector2 warped = {0, 0};
         if (m_transform){
-            Vector local_direction;
-            local_direction = m_transform->inverse(local_direction);
+            auto x = 2;
+            Vector local_direction = direction;
+            //Matrix3x3 inverse_matrix = m_transform.submatrix<3, 3>(0,0);
+            //local_direction = m_transform.submatrix<3,3>
+            local_direction = m_transform->inverse(direction.normalized());//m_transform->inverse(direction).normalized()
             float mag_local_direction = sqrt(local_direction.x()*local_direction.x()+local_direction.y()*local_direction.y()+local_direction.z()*local_direction.z());
-            float theta = acosf(local_direction.y()/mag_local_direction);
-            float phi = atan2f(local_direction.z(), local_direction.x());
+            float theta = acosf(local_direction.y());//mag not present in tut
+            float phi = atan2f(-local_direction.z(), local_direction.x());
             //To remap local coordinates to spherical coordinates:
-            float u = 1-(phi / (2 * Pi) + 0.5f);
+            float u = (phi / (2 * Pi) + 0.5f);
             //u = clamp(u, 0.0f, 1.0f);
             float v = (theta / Pi);
             //v = clamp(v, 0.0f, 1.0f);
-            warped = Vector2(u,v);
+            warped ={u,v};
+
+
+            // tutorial:
+            // phi + atan(z, x(
+            //
+
         }
         
         // hints:
@@ -36,6 +45,7 @@ public:
         // coordinates }
         // * find the corresponding pixel coordinate for the given local
         // direction
+        int x{2};
         return {
             .value = m_texture->evaluate(warped),
         };
