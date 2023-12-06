@@ -25,7 +25,7 @@ public:
 
             // If the last bounce hits an object which is not a light, the path turns black.
             // If we hit a light, we terminate the path.
-            if (bounce == maxBounces || its.instance->emission()) {
+            if (bounce == maxBounces || its.instance->emission() != nullptr) {
                 return result * its.evaluateEmission();
             }
 
@@ -52,6 +52,8 @@ public:
         );
     }
 };
-}
+
+} // namespace lightwave
+
 REGISTER_INTEGRATOR(DirectIntegrator, "direct")
 
