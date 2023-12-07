@@ -19,14 +19,28 @@ private:
     BorderMode m_border;
     FilterMode m_filter;
 
-    float imageWidth;
-    float imageHeight;
+    /**
+     * @param xy a coordinate in the image pixel space, potentially out of image bounds
+     * @returns a coordinate in the image pixel space, guaranteed to be inside of the image boundaries.
+     * This is achieved by either clamping or wrapping it, depending on the selected BorderMode.
+     */
+    inline Point2i handleBorders(Point2i xy) const {
+        if (m_border == BorderMode::Clamp) {
+            xy.x() = std::clamp(xy.x(), 0, m_image->resolution().x() - 1);
+            xy.y() = std::clamp(xy.y(), 0, m_image->resolution().y() - 1);
+        } else {
+            xy.x() = xy.x() % m_image->resolution().x();
+            if (xy.x() < 0) xy.x() += m_image->resolution().x();
+            xy.y() = xy.y() % m_image->resolution().y();
+            if (xy.y() < 0) xy.y() += m_image->resolution().y();
+        }
+
+        return xy;
+    }
 
 public:
     explicit ImageTexture(const Properties& properties) {
         m_image = properties.has("filename") ? std::make_shared<Image>(properties) : properties.getChild<Image>();
-        imageWidth = static_cast<float>(m_image->resolution().x());
-        imageHeight = static_cast<float>(m_image->resolution().y());
 
         m_exposure = properties.get<float>("exposure", 1);
 
@@ -45,70 +59,49 @@ public:
     }
 
     /**
-     * TODO: write doc
+     * Takes in normalized texture plane coordinates (0 to 1) and maps them to the corresponding image pixel coordinates.
+     * Values outside the [0-1] interval are either clamped to the border pixels of the image (clamp mode),
+     * or wrapped around the image via modulo (repeat mode).
+     * In nearest neighbor mode, we simply use the coordinate of the pixel which uv maps to.
+     * In bilinear filtering mode, we perform simple anti-aliasing by sampling the colors of the 4 pixels surrounding
+     * the given uv-coordinate and interpolate its color value from them.
      */
     Color evaluate(const Point2& uv) const override {
-        float xScaled = uv.x() * imageWidth;
-        float yScaled = (1.0f - uv.y()) * imageHeight;
+        float xScaled = uv.x() * static_cast<float>(m_image->resolution().x());
+        float yScaled = (1.0f - uv.y()) * static_cast<float>(m_image->resolution().y());
 
         switch (m_filter) {
             case FilterMode::Nearest: {
-                int xCoord = static_cast<int>(floorf(xScaled));
-                int yCoord = static_cast<int>(floorf(yScaled));
-
-                if (m_border == BorderMode::Clamp) {
-                    xCoord = std::clamp(xCoord, 0, m_image->resolution().x() - 1);
-                    yCoord = std::clamp(yCoord, 0, m_image->resolution().y() - 1);
-                } else {
-                    xCoord = xCoord % m_image->resolution().x();
-                    if (xCoord < 0) xCoord += m_image->resolution().x();
-                    yCoord = yCoord % m_image->resolution().y();
-                    if (yCoord < 0) yCoord += m_image->resolution().y();
-                }
-
-                return m_image->get(Point2i(xCoord, yCoord)) * m_exposure;
+                const Point2i coords = {static_cast<int>(floorf(xScaled)), static_cast<int>(floorf(yScaled))};
+                return m_image->get(handleBorders(coords)) * m_exposure;
             }
 
             case FilterMode::Bilinear: {
+                // Which four pixels to choose is determined by the proximity of the given uv-coordinate to the center
+                // points of the pixels (which are located at 0.5, 1.5, etc.). Thus, the weights of the 4 colors equal
+                // the distances of the uv coordinate to these values.
+                // We can get them either by subtracting 0.5 and using floor(), or using round() and adding 0.5 in the
+                // weight computation: either way works.
                 xScaled -= 0.5f;
                 yScaled -= 0.5f;
 
-                // todo: try to convert to int coordinates early and then get 4 neighbors via +/- 0.5 followed by
-                //  additional border handling
-                if (m_border == BorderMode::Clamp) {
-                    xScaled = std::clamp(xScaled, 0.0f, imageWidth - 1.0f);
-                    yScaled = std::clamp(yScaled, 0.0f, imageHeight - 1.0f);
-                } else {
-                    xScaled = fmodf(xScaled, imageWidth);
-                    if (xScaled < 0.0f) xScaled += imageWidth;
-                    yScaled = fmodf(yScaled, imageHeight);
-                    if (yScaled < 0.0f) yScaled += imageHeight;
-                }
-
-                const int xMin = static_cast<int>(floorf(xScaled));
-                const int yMin = static_cast<int>(floorf(yScaled));
+                int xMin = static_cast<int>(floorf(xScaled));
                 int xMax = xMin + 1;
+                int yMin = static_cast<int>(floorf(yScaled));
                 int yMax = yMin + 1;
-
-                if (m_border == BorderMode::Clamp) {
-                    xMax = std::clamp(xMax, 0, m_image->resolution().x() - 1);
-                    yMax = std::clamp(yMax, 0, m_image->resolution().y() - 1);
-                } else {
-                    xMax = xMax % m_image->resolution().x();
-                    if (xMax < 0) xMax += m_image->resolution().x();
-                    yMax = yMax % m_image->resolution().y();
-                    if (yMax < 0) yMax += m_image->resolution().y();
-                }
 
                 const float xMaxWeight = xScaled - static_cast<float>(xMin);
                 const float xMinWeight = 1.0f - xMaxWeight;
                 const float yMaxWeight = yScaled - static_cast<float>(yMin);
                 const float yMinWeight = 1.0f - yMaxWeight;
 
-                const Color interpolatedColor = xMinWeight * yMinWeight * m_image->get(Point2i(xMin, yMin))
-                                                + xMinWeight * yMaxWeight * m_image->get(Point2i(xMin, yMax))
-                                                + xMaxWeight * yMinWeight * m_image->get(Point2i(xMax, yMin))
-                                                + xMaxWeight * yMaxWeight * m_image->get(Point2i(xMax, yMax));
+                const Point2i minCoords = handleBorders({xMin, yMin});
+                const Point2i maxCoords = handleBorders({xMax, yMax});
+
+                const Color interpolatedColor = xMinWeight * yMinWeight * m_image->get(minCoords)
+                                                + xMinWeight * yMaxWeight * m_image->get({minCoords.x(), maxCoords.y()})
+                                                + xMaxWeight * yMinWeight * m_image->get({maxCoords.x(), minCoords.y()})
+                                                + xMaxWeight * yMaxWeight * m_image->get(maxCoords);
 
                 return interpolatedColor * m_exposure;
             }
