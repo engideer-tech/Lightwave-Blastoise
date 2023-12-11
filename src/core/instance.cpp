@@ -4,46 +4,54 @@
 #include <lightwave/sampler.hpp>
 
 namespace lightwave {
+/**
+ * Transforms the position and frame of the SurfaceEvent from object to world coordinates.
+ */
+void Instance::transformFrame(SurfaceEvent& surf) const {
+    if (!m_transform) {
+        return;
+    }
 
-void Instance::transformFrame(SurfaceEvent &surf) const {
-    // hints:
-    // * transform the hitpoint and frame here
-    // * if m_flipNormal is true, flip the direction of the bitangent (which in effect flips the normal)
-    // * make sure that the frame is orthonormal (you are free to change the bitangent for this, but keep
-    //   the direction of the transformed tangent the same)
+    surf.position = m_transform->apply(surf.position);
+    surf.frame.tangent = m_transform->apply(surf.frame.tangent).normalized();
+    surf.frame.bitangent = m_transform->apply(surf.frame.bitangent).normalized();
+    if (m_flipNormal) {
+        surf.frame.bitangent *= -1.0f;
+    }
+
+    surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent).normalized();
+    surf.frame.bitangent = surf.frame.normal.cross(surf.frame.tangent).normalized();
 }
 
-bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) const {
+/**
+ * Transforms the ray and the last intersection distance its.t down to the local object coordinates, if there is a
+ * transform applied to this instance in the scene. Then performs the intersection for this instance's object.
+ */
+bool Instance::intersect(const Ray& worldRay, Intersection& its, Sampler& rng) const {
+    // fast path, if no transform is needed
     if (!m_transform) {
-        // fast path, if no transform is needed
-        Ray localRay = worldRay;
-        if (m_shape->intersect(localRay, its, rng)) {
+        if (m_shape->intersect(worldRay, its, rng)) {
             its.instance = this;
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     const float previousT = its.t;
-    Ray localRay;
-    NOT_IMPLEMENTED
+    Ray localRay = m_transform->inverse(worldRay);
+    const float transformedRayDirLength = localRay.direction.length();
+    its.t *= transformedRayDirLength;
+    localRay = localRay.normalized();
 
-    // hints:
-    // * transform the ray (do not forget to normalize!)
-    // * how does its.t need to change?
-
-    const bool wasIntersected = m_shape->intersect(localRay, its, rng);
-    if (wasIntersected) {
-        // hint: how does its.t need to change?
-
+    if (m_shape->intersect(localRay, its, rng)) {
         its.instance = this;
         transformFrame(its);
+        its.t = (its.position - worldRay.origin).length();
         return true;
-    } else {
-        its.t = previousT;
-        return false;
     }
+
+    its.t = previousT;
+    return false;
 }
 
 Bounds Instance::getBoundingBox() const {
@@ -80,7 +88,7 @@ Point Instance::getCentroid() const {
     return m_transform->apply(m_shape->getCentroid());
 }
 
-AreaSample Instance::sampleArea(Sampler &rng) const {
+AreaSample Instance::sampleArea(Sampler& rng) const {
     AreaSample sample = m_shape->sampleArea(rng);
     transformFrame(sample);
     return sample;
