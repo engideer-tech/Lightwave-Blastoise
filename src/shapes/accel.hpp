@@ -58,12 +58,14 @@ class AccelerationStructure : public Shape {
         /// @brief For internal nodes: The index of the left child node in
         /// m_nodes.
         NodeIndex leftChildIndex() const { return leftFirst; }
+
         /// @brief For internal nodes: The index of the right child node in
         /// m_nodes.
         NodeIndex rightChildIndex() const { return leftFirst + 1; }
 
         /// @brief For leaf nodes: The first index in m_primitiveIndices.
         NodeIndex firstPrimitiveIndex() const { return leftFirst; }
+
         /// @brief For leaf nodes: The last index in m_primitiveIndices (still
         /// included).
         NodeIndex lastPrimitiveIndex() const {
@@ -85,7 +87,7 @@ class AccelerationStructure : public Shape {
     std::vector<int> m_primitiveIndices;
 
     /// @brief Returns the root BVH node.
-    const Node &rootNode() const {
+    const Node& rootNode() const {
         // by convention, this is always the first element of m_nodes
         return m_nodes.front();
     }
@@ -94,8 +96,7 @@ class AccelerationStructure : public Shape {
      * @brief Intersects a BVH node, recursing into children (for internal
      * nodes), or intersecting all primitives (for leaf nodes).
      */
-    bool intersectNode(const Node &node, const Ray &ray, Intersection &its,
-                       Sampler &rng) const {
+    bool intersectNode(const Node& node, const Ray& ray, Intersection& its, Sampler& rng) const {
         // update the statistic tracking how many BVH nodes have been tested for
         // intersection
         its.stats.bvhCounter++;
@@ -107,34 +108,27 @@ class AccelerationStructure : public Shape {
                 // tested for intersection
                 its.stats.primCounter++;
                 // test the child for intersection
-                wasIntersected |= intersect(
-                    m_primitiveIndices[node.leftFirst + i], ray, its, rng);
+                wasIntersected |= intersect(m_primitiveIndices[node.leftFirst + i], ray, its, rng);
             }
         } else { // internal node
             // test which bounding box is intersected first by the ray.
             // this allows us to traverse the children in the order they are
             // intersected in, which can help prune a lot of unnecessary
             // intersection tests.
-            const auto leftT =
-                intersectAABB(m_nodes[node.leftChildIndex()].aabb, ray);
-            const auto rightT =
-                intersectAABB(m_nodes[node.rightChildIndex()].aabb, ray);
+            const auto leftT = intersectAABB(m_nodes[node.leftChildIndex()].aabb, ray);
+            const auto rightT = intersectAABB(m_nodes[node.rightChildIndex()].aabb, ray);
             if (leftT < rightT) { // left child is hit first; test left child
-                                  // first, then right child
+                // first, then right child
                 if (leftT < its.t)
-                    wasIntersected |= intersectNode(
-                        m_nodes[node.leftChildIndex()], ray, its, rng);
+                    wasIntersected |= intersectNode(m_nodes[node.leftChildIndex()], ray, its, rng);
                 if (rightT < its.t)
-                    wasIntersected |= intersectNode(
-                        m_nodes[node.rightChildIndex()], ray, its, rng);
+                    wasIntersected |= intersectNode(m_nodes[node.rightChildIndex()], ray, its, rng);
             } else { // right child is hit first; test right child first, then
-                     // left child
+                // left child
                 if (rightT < its.t)
-                    wasIntersected |= intersectNode(
-                        m_nodes[node.rightChildIndex()], ray, its, rng);
+                    wasIntersected |= intersectNode(m_nodes[node.rightChildIndex()], ray, its, rng);
                 if (leftT < its.t)
-                    wasIntersected |= intersectNode(
-                        m_nodes[node.leftChildIndex()], ray, its, rng);
+                    wasIntersected |= intersectNode(m_nodes[node.leftChildIndex()], ray, its, rng);
             }
         }
         return wasIntersected;
@@ -142,7 +136,7 @@ class AccelerationStructure : public Shape {
 
     /// @brief Performs a slab test to intersect a bounding box with a ray,
     /// returning Infinity in case the ray misses.
-    float intersectAABB(const Bounds &bounds, const Ray &ray) const {
+    float intersectAABB(const Bounds& bounds, const Ray& ray) const {
         // but this only saves us ~1%, so let's not do it. intersect all axes at
         // once with the minimum slabs of the bounding box
         const auto t1 = (bounds.min() - ray.origin) / ray.direction;
@@ -162,39 +156,38 @@ class AccelerationStructure : public Shape {
             return Infinity; // the bounding box lies behind the ray origin
 
         return tNear; // return the first intersection with the bounding box
-                      // (may also be negative!)
+        // (may also be negative!)
     }
 
     /// @brief Computes the axis aligned bounding box for a leaf BVH node
-    void computeAABB(Node &node) {
+    void computeAABB(Node& node) {
         node.aabb = Bounds::empty();
         for (NodeIndex i = 0; i < node.primitiveCount; i++) {
-            const Bounds childAABB =
-                getBoundingBox(m_primitiveIndices[node.leftFirst + i]);
+            const Bounds childAABB = getBoundingBox(m_primitiveIndices[node.leftFirst + i]);
             node.aabb.extend(childAABB);
         }
     }
 
     /// @brief Computes the surface area of a bounding box.
-    float surfaceArea(const Bounds &bounds) const {
+    float surfaceArea(const Bounds& bounds) const {
         const auto size = bounds.diagonal();
         return 2 * (size.x() * size.y() + size.x() * size.z() +
                     size.y() * size.z());
     }
 
-    NodeIndex binning(Node &node, int splitAxis) {
+    NodeIndex binning(Node& node, int splitAxis) {
         NOT_IMPLEMENTED
-        // work with centroids of objects, init bounds to outer most centroids
+        // work with centroids of objects, init bounds to outermost centroids
     }
 
     /// @brief Attempts to subdivide a given BVH node.
-    void subdivide(Node &parent) {
+    void subdivide(Node& parent) {
         // only subdivide if enough children are available.
         if (parent.primitiveCount <= 2) {
             return;
         }
 
-        // pick the axis with highest bounding box length as split axis.
+        // pick the axis with the highest bounding box length as split axis.
         const int splitAxis = parent.aabb.diagonal().maxComponentIndex();
         const NodeIndex firstPrimitive = parent.firstPrimitiveIndex();
 
@@ -210,27 +203,22 @@ class AccelerationStructure : public Shape {
             firstRightIndex = binning(parent, splitAxis);
         } else {
             // split in the middle
-            const float splitPos =
-                parent.aabb.center()[splitAxis]; // pick center of bounding box
-                                                 // as split pos
+            const float splitPos = parent.aabb.center()[splitAxis]; // pick center of bounding box
+            // as split pos
 
             // partition algorithm (you might remember this from quicksort)
-            firstRightIndex         = firstPrimitive;
+            firstRightIndex = firstPrimitive;
             NodeIndex lastLeftIndex = parent.lastPrimitiveIndex();
             while (firstRightIndex <= lastLeftIndex) {
-                if (getCentroid(
-                        m_primitiveIndices[firstRightIndex])[splitAxis] <
-                    splitPos) {
+                if (getCentroid(m_primitiveIndices[firstRightIndex])[splitAxis] < splitPos) {
                     firstRightIndex++;
                 } else {
-                    std::swap(m_primitiveIndices[firstRightIndex],
-                              m_primitiveIndices[lastLeftIndex--]);
+                    std::swap(m_primitiveIndices[firstRightIndex],m_primitiveIndices[lastLeftIndex--]);
                 }
             }
         }
 
-        const NodeIndex leftCount =
-            firstRightIndex - parent.firstPrimitiveIndex();
+        const NodeIndex leftCount = firstRightIndex - parent.firstPrimitiveIndex();
         const NodeIndex rightCount = parent.primitiveCount - leftCount;
 
         if (leftCount == 0 || rightCount == 0) {
@@ -239,18 +227,18 @@ class AccelerationStructure : public Shape {
         }
 
         // the two children will always be contiguous in our m_nodes list
-        const NodeIndex leftChildIndex  = (NodeIndex) (m_nodes.size() + 0);
+        const NodeIndex leftChildIndex = (NodeIndex) (m_nodes.size() + 0);
         const NodeIndex rightChildIndex = (NodeIndex) (m_nodes.size() + 1);
         parent.primitiveCount = 0; // mark the parent node as internal node
-        parent.leftFirst      = leftChildIndex;
+        parent.leftFirst = leftChildIndex;
 
-        // `parent' breaks
+        // 'parent' breaks
         m_nodes.emplace_back();
-        m_nodes[leftChildIndex].leftFirst      = firstPrimitive;
+        m_nodes[leftChildIndex].leftFirst = firstPrimitive;
         m_nodes[leftChildIndex].primitiveCount = leftCount;
 
         m_nodes.emplace_back();
-        m_nodes[rightChildIndex].leftFirst      = firstRightIndex;
+        m_nodes[rightChildIndex].leftFirst = firstRightIndex;
         m_nodes[rightChildIndex].primitiveCount = rightCount;
 
         // first, process the left child node (and all of its children)
@@ -265,12 +253,14 @@ protected:
     /// @brief Returns the number of children (individual shapes) that are part
     /// of this acceleration structure.
     virtual int numberOfPrimitives() const = 0;
+
     /// @brief Intersect a single child (identified by the index) with the given
     /// ray.
-    virtual bool intersect(int primitiveIndex, const Ray &ray,
-                           Intersection &its, Sampler &rng) const = 0;
+    virtual bool intersect(int primitiveIndex, const Ray& ray, Intersection& its, Sampler& rng) const = 0;
+
     /// @brief Returns the axis aligned bounding box of the given child.
     virtual Bounds getBoundingBox(int primitiveIndex) const = 0;
+
     /// @brief Returns the centroid of the given child.
     virtual Point getCentroid(int primitiveIndex) const = 0;
 
@@ -283,8 +273,8 @@ protected:
         std::iota(m_primitiveIndices.begin(), m_primitiveIndices.end(), 0);
 
         // create root node
-        auto &root          = m_nodes.emplace_back();
-        root.leftFirst      = 0;
+        auto& root = m_nodes.emplace_back();
+        root.leftFirst = 0;
         root.primitiveCount = numberOfPrimitives();
         computeAABB(root);
         subdivide(root);
@@ -295,12 +285,11 @@ protected:
     }
 
 public:
-    bool intersect(const Ray &ray, Intersection &its,
-                   Sampler &rng) const override {
+    bool intersect(const Ray& ray, Intersection& its,
+                   Sampler& rng) const override {
         if (m_primitiveIndices.empty())
             return false; // exit early if no children exist
-        if (intersectAABB(rootNode().aabb, ray) <
-            its.t) // test root bounding box for potential hit
+        if (intersectAABB(rootNode().aabb, ray) < its.t) // test root bounding box for potential hit
             return intersectNode(rootNode(), ray, its, rng);
         return false;
     }

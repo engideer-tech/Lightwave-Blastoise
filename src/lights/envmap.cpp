@@ -1,7 +1,10 @@
 #include <lightwave.hpp>
 
 namespace lightwave {
-
+/**
+ * A light-emitting skybox (actually skysphere) around the scene. The walls of the sphere are infinitely far away from
+ * the scene, which allows to abstract the scene into a single point located at its center.
+ */
 class EnvironmentMap final : public BackgroundLight {
     /// @brief The texture to use as background
     ref<Texture> m_texture;
@@ -15,39 +18,21 @@ public:
         m_transform = properties.getOptionalChild<Transform>();
     }
 
+    /**
+     * Receives a vector pointing away from the scene, towards the skysphere. If the envmap is transformed (rotated),
+     * we first apply that transform to the given vector. The vector is then mapped to spherical coordinates, which
+     * can be mapped to texture coordinates.
+     */
     BackgroundLightEval evaluate(const Vector& direction) const override {
-        Vector2 warped = {0, 0};
-        if (m_transform) {
-            Vector local_direction = direction;
-            //Matrix3x3 inverse_matrix = m_transform.submatrix<3, 3>(0,0);
-            //local_direction = m_transform.submatrix<3,3>
-            local_direction = m_transform->inverse(
-                    direction.normalized()); //m_transform->inverse(direction).normalized()
-            float mag_local_direction = sqrt(
-                    local_direction.x() * local_direction.x() + local_direction.y() * local_direction.y() +
-                    local_direction.z() * local_direction.z());
-            float theta = acosf(local_direction.y());//mag not present in tut
-            float phi = atan2f(-local_direction.z(), local_direction.x());
-            //To remap local coordinates to spherical coordinates:
-            float u = (phi / (2 * Pi) + 0.5f);
-            //u = clamp(u, 0.0f, 1.0f);
-            float v = (theta / Pi);
-            //v = clamp(v, 0.0f, 1.0f);
-            warped = {u, v};
+        const Vector localDirection = m_transform ? m_transform->inverse(direction) : direction;
 
+        const float theta = acosf(localDirection.y());
+        const float phi = atan2f(-localDirection.z(), localDirection.x());
 
-            // tutorial:
-            // phi + atan(z, x(
-            //
+        const float u = phi / (2.0f * Pi) + 0.5f;
+        const float v = theta / Pi;
 
-        }
-
-        // hints:
-        // * if (m_transform) { transform direction vector from world to local
-        // coordinates }
-        // * find the corresponding pixel coordinate for the given local
-        // direction
-        return {m_texture->evaluate(warped),};
+        return {m_texture->evaluate({u, v})};
     }
 
     DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {

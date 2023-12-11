@@ -1,7 +1,9 @@
 #include <lightwave.hpp>
 
 namespace lightwave {
-
+/**
+ * Computes a simple checkerboard texture for objects.
+ */
 class Checkerboard : public Texture {
 private:
     Color m_color0;
@@ -17,13 +19,13 @@ public:
 
     Color evaluate(const Point2& uv) const override {
         // Apply scale to UV coordinates
-        Point2 scaledUV = {uv.x() * m_scale.x(), uv.y() * m_scale.y()};
+        const int scaledU = static_cast<int>(floorf(uv.x() * m_scale.x()));
+        const int scaledV = static_cast<int>(floorf(uv.y() * m_scale.y()));
 
         // Calculate checkerboard pattern
-        // todo: cast before mod, only compute 1 mod
-        bool isEven = static_cast<int>(floorf(scaledUV.x())) % 2 == 0;
-        bool isEven2 = static_cast<int>(floorf(scaledUV.y())) % 2 == 0;
-        if ((isEven && isEven2) || (!isEven && !isEven2)) {
+        const bool uEven = scaledU % 2 == 0;
+        const bool vEven = scaledV % 2 == 0;
+        if (uEven == vEven) {
             return m_color0;
         }
         return m_color1;
