@@ -1,7 +1,9 @@
 #include <lightwave.hpp>
 
 namespace lightwave {
-
+/**
+ * Models an emissive texture on a diffuse (Lambertian) material.
+ */
 class Lambertian : public Emission {
 private:
     ref<Texture> m_emission;
@@ -12,10 +14,14 @@ public:
     }
 
     /**
-     * todo: add doc on this fn being for area lights
+     * Evaluates the emission at the given texture coordinate uv.
+     * If the ray hits the backside of the object, the emission equals zero.
      */
     EmissionEval evaluate(const Point2& uv, const Vector& wo) const override {
-        // todo: return black if our vector comes from the negative hemisphere (from the backside)
+        if (wo.z() <= 0.0f) {
+            return {Color(0.0f)};
+        }
+
         return {m_emission->evaluate(uv)};
     }
 
@@ -23,7 +29,8 @@ public:
         return tfm::format("Lambertian[\n"
                            "  emission = %s\n"
                            "]",
-                           indent(m_emission));
+                           indent(m_emission)
+        );
     }
 };
 

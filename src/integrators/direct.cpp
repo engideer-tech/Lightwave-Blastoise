@@ -2,43 +2,52 @@
 
 namespace lightwave {
 /**
- * Renders objects by tracing a single path the camera of `maxBounces` length at a time. The path originates at the
- * camera and collects reflectance information at each bounce.
+ * Traces a single-hop path from the camera. Thus, the first intersection collects light/reflectance information,
+ * and the second one only light info (given the intersections occur). If a path contains no light (neither from an
+ * object nor from the background illumination), that path turns black.
  */
 class DirectIntegrator : public SamplingIntegrator {
-private:
-    static constexpr short maxBounces = 1;
-
 public:
     explicit DirectIntegrator(const Properties& properties) : SamplingIntegrator(properties) {}
 
     Color Li(const Ray& ray, Sampler& rng) override {
-        Ray currentRay = ray;
         Color result = Color::white();
+        bool hitLight = false;
 
-        for (short bounce = 0; bounce <= maxBounces; bounce++) {
-            const Intersection its = m_scene->intersect(currentRay, rng);
-            if (!its) {
-                const BackgroundLightEval bgLight = m_scene->evaluateBackground(currentRay.direction);
-                return result * bgLight.value;
-            }
+        // First ray
+        const Intersection its1 = m_scene->intersect(ray, rng);
+        if (!its1) {
+            return m_scene->evaluateBackground(ray.direction).value;
+        }
 
-            // If the last bounce hits an object which is not a light, the path turns black.
-            // If we hit a light, we terminate the path.
-            if (bounce == maxBounces || its.instance->emission() != nullptr) {
-                return result * its.evaluateEmission();
-            }
-
-            const BsdfSample bsdfSample = its.sampleBsdf(rng);
-            if (bsdfSample.isInvalid()) {
-                return Color::black();
-            }
-
-            currentRay = Ray(its.position, bsdfSample.wi);
+        const BsdfSample bsdfSample = its1.sampleBsdf(rng);
+        if (its1.instance->emission() != nullptr) {
+            hitLight = true;
+            result *= its1.evaluateEmission();
+            // TODO: ask tutor on why this early return is needed.
+            //  If it's not there, in emission.xml you always multiply the light sphere colors by the blue sphere.
+            return result;
+        } else {
             result *= bsdfSample.weight;
         }
 
-        return result;
+
+        // Second ray
+        const Ray ray2 = {its1.position, bsdfSample.wi};
+        const Intersection its2 = m_scene->intersect(ray2, rng);
+        if (!its2) {
+            const Color bgLight = m_scene->evaluateBackground(ray2.direction).value;
+            if (bgLight == Color(0)) {
+                return hitLight ? result : Color::black();
+            }
+            return result * bgLight;
+        }
+
+        const Color emission = its2.evaluateEmission();
+        if (emission == Color(0)) {
+            return hitLight ? result : Color::black();
+        }
+        return result * emission;
     }
 
     std::string toString() const override {

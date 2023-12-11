@@ -16,25 +16,24 @@ public:
         m_albedo = properties.get<Texture>("albedo");
     }
 
+    /**
+     * Computed a BSDF sample for a diffuse material. The full equation for this is:
+     * @code albedo * InvPi / cosineHemispherePdf(wi) * Frame::cosTheta(wi) @endcode,
+     * but the terms cancel out, leaving us with just albedo as the weight.
+     */
     BsdfSample sample(const Point2& uv, const Vector& wo, Sampler& rng) const override {
+        const Vector wi = squareToCosineHemisphere(rng.next2D()).normalized();
         const Color albedo = m_albedo->evaluate(uv);
 
-        const Vector wi = squareToCosineHemisphere(rng.next2D()).normalized();
-        const float wiPdf = cosineHemispherePdf(wi);
-
-        // todo: test if we can just return albedo directly
-        const Color weight = wiPdf == 0.0f
-                             ? Color(0.0f)
-                             : albedo * InvPi / cosineHemispherePdf(wi) * Frame::cosTheta(wi);
-
-        return {wi, weight};
+        return {wi, albedo};
     }
 
     std::string toString() const override {
         return tfm::format("Diffuse[\n"
                            "  albedo = %s\n"
                            "]",
-                           indent(m_albedo));
+                           indent(m_albedo)
+        );
     }
 };
 

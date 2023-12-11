@@ -30,5 +30,7 @@ public:
         );
     }
 };
-}
+
+} // namespace lightwave
+
 REGISTER_INTEGRATOR(NormalsIntegrator, "normals")

@@ -25,9 +25,8 @@ public:
         bool isEven2 = static_cast<int>(floorf(scaledUV.y())) % 2 == 0;
         if ((isEven && isEven2) || (!isEven && !isEven2)) {
             return m_color0;
-        } else {
-            return m_color1;
         }
+        return m_color1;
     }
 
     std::string toString() const override {
@@ -36,7 +35,8 @@ public:
                            "  color1 = %s\n"
                            "  scale = %s\n"
                            "]",
-                           m_color0, m_color1, m_scale);
+                           m_color0, m_color1, m_scale
+        );
     }
 };
 

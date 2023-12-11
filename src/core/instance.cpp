@@ -4,7 +4,6 @@
 #include <lightwave/sampler.hpp>
 
 namespace lightwave {
-
 /**
  * Transforms the position and frame of the SurfaceEvent from object to world coordinates.
  */
@@ -49,10 +48,10 @@ bool Instance::intersect(const Ray& worldRay, Intersection& its, Sampler& rng) c
         transformFrame(its);
         its.t = (its.position - worldRay.origin).length();
         return true;
-    } else {
-        its.t = previousT;
-        return false;
     }
+
+    its.t = previousT;
+    return false;
 }
 
 Bounds Instance::getBoundingBox() const {

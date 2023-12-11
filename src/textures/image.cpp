@@ -113,7 +113,8 @@ public:
                            "  image = %s,\n"
                            "  exposure = %f,\n"
                            "]",
-                           indent(m_image), m_exposure);
+                           indent(m_image), m_exposure
+        );
     }
 };
 
