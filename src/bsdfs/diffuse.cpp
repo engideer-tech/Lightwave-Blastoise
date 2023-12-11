@@ -16,6 +16,11 @@ public:
         m_albedo = properties.get<Texture>("albedo");
     }
 
+    BsdfEval evaluate(const Point2 &uv, const Vector &wo,
+                      const Vector &wi) const override {
+        NOT_IMPLEMENTED
+    }
+
     /**
      * Computed a BSDF sample for a diffuse material. The full equation for this is:
      * @code albedo * InvPi / cosineHemispherePdf(wi) * Frame::cosTheta(wi) @endcode,
