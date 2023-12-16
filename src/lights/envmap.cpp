@@ -44,7 +44,7 @@ public:
         // sun for example)
 
         return {
-                .wi     = direction,
+                .wi = direction,
                 .weight = E.value / Inv4Pi,
                 .distance = Infinity,
         };
