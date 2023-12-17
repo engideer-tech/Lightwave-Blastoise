@@ -175,8 +175,70 @@ class AccelerationStructure : public Shape {
                     size.y() * size.z());
     }
 
+    float SAHCost(Bounds leftBounds, Bounds rightBounds, int leftCount, int rightCount) {
+        const float leftArea = surfaceArea(leftBounds);
+        const float rightArea = surfaceArea(rightBounds);
+        const float totalArea = leftArea + rightArea;
+
+        return (leftArea * leftCount + rightArea * rightCount) /totalArea;
+    }
+
     NodeIndex binning(Node& node, int splitAxis) {
-        NOT_IMPLEMENTED
+        const int numBins = 96;
+
+        std::array<int, numBins> binCounts;
+        std::array<Bounds, numBins> binBounds;
+
+        for (int i = 0; i < numBins; i++) {
+            binCounts[i] = 0;
+            binBounds[i] = Bounds::empty();
+        }
+        for (NodeIndex i = 0; i < node.primitiveCount; ++i) {
+            const Bounds primBounds = getBoundingBox(m_primitiveIndices[node.leftFirst + i]);
+            const float centroid = getCentroid(m_primitiveIndices[node.leftFirst + i])[splitAxis];
+
+// Determine which bin the primitive belongs to based on its centroid
+            int binIndex = static_cast<int>(((centroid - node.aabb.min()[splitAxis]) / (node.aabb.max()[splitAxis] - node.aabb.min()[splitAxis])) * numBins);
+// int binIndex = static_cast<int>(((centroid - node.aabb.min()[splitAxis]) / node.aabb.diagonal()[splitAxis]) * numBins);
+
+            binIndex = std::clamp(binIndex, 0, numBins - 1); // Ensure binIndex is within range
+
+// Update bin information
+            binCounts[binIndex]++;
+            binBounds[binIndex].extend(primBounds);
+        }
+
+        float minCost = Infinity;
+        NodeIndex bestSplitIndex = 0;
+        for (int i = 1; i < numBins; ++i) {
+            // Calculate SAH cost for each potential split
+            Bounds leftBounds = Bounds::empty();
+            Bounds rightBounds = Bounds::empty();
+            int leftCount = 0, rightCount = 0;
+
+            // Calculate left bounds and count
+            for (int j = 0; j < i; ++j) {
+                leftBounds.extend(binBounds[j]);
+                leftCount += binCounts[j];
+            }
+
+            // Calculate right bounds and count
+            for (int j = i; j < numBins; ++j) {
+                rightBounds.extend(binBounds[j]);
+                rightCount += binCounts[j];
+            }
+
+            const float sahCost = SAHCost(leftBounds, rightBounds, leftCount, rightCount);
+
+            if (sahCost < minCost) {
+                minCost = sahCost;
+                bestSplitIndex = i;
+            }
+        }
+
+        float splitPos = node.aabb.min()[splitAxis] + ((node.aabb.max()[splitAxis] - node.aabb.min()[splitAxis]) * (bestSplitIndex / (float)numBins));
+
+        return splitPos;
         // work with centroids of objects, init bounds to outermost centroids
     }
 

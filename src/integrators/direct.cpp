@@ -47,6 +47,24 @@ public:
         if (emission == Color(0)) {
             return hitLight ? result : Color::black();
         }
+        if(m_scene->hasLights()){
+            LightSample light_sampled = m_scene->sampleLight(rng);
+            if(!light_sampled.light->canBeIntersected()){
+
+                Point current_shading_point = its1.position;
+                DirectLightSample direct_light_sampled = light_sampled.light->sampleDirect(current_shading_point,rng);
+                Vector light_direction = direct_light_sampled.wi;
+                BsdfEval bsdf = its1.evaluateBsdf(light_direction);
+                Ray Shadow_Ray = {its1.position,light_direction};
+                Intersection shadow_intersect = m_scene->intersect(Shadow_Ray,rng);
+                bool isVisible = shadow_intersect && shadow_intersect.wo.length()>direct_light_sampled.distance;
+                //Color result_val = bsdf.value;
+                if(isVisible){
+                    result += (bsdf.value*direct_light_sampled.weight)/light_sampled.probability;
+                }
+                return result;
+            }
+        }
         return result * emission;
     }
 
