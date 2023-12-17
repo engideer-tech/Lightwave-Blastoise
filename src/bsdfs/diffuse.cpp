@@ -27,6 +27,11 @@ public:
      * Since the terms cancel out, the weight equals just the albedo.
      */
     BsdfSample sample(const Point2& uv, const Vector& wo, Sampler& rng) const override {
+        // TODO: ask tutor why this check cannot be performed here (it causes image_modes to turn black).
+        // if (wo.z() <= 0.0f) {
+        //     return BsdfSample::invalid();
+        // }
+
         const Vector wi = squareToCosineHemisphere(rng.next2D()).normalized();
         const Color albedo = m_albedo->evaluate(uv);
 

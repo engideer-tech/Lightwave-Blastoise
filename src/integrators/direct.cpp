@@ -12,6 +12,7 @@ public:
 
     Color Li(const Ray& ray, Sampler& rng) override {
         Color result = Color::white();
+        bool neeHitLight = false;
 
         // First ray
         const Intersection its1 = m_scene->intersect(ray, rng);
@@ -30,15 +31,20 @@ public:
             if (!sampleLight.light->canBeIntersected()) {
                 const DirectLightSample lightProps = sampleLight.light->sampleDirect(its1.position, rng);
                 const Ray shadowRay = {its1.position, lightProps.wi};
-                if (m_scene->intersect(shadowRay, lightProps.distance, rng)) {
+                if (!m_scene->intersect(shadowRay, lightProps.distance, rng)) {
                     const BsdfEval bsdfEval = its1.evaluateBsdf(lightProps.wi);
-                    result += (lightProps.weight * bsdfEval.value) / sampleLight.probability;
+                    result += lightProps.weight / sampleLight.probability;
+                    result *= bsdfEval.value;
+                    neeHitLight = true;
                 }
             }
         }
 
         const BsdfSample bsdfSample = its1.sampleBsdf(rng);
-        result *= bsdfSample.weight;
+        if (!neeHitLight) {
+            result *= bsdfSample.weight;
+        }
+        // TODO: ask tutor how to properly handle invalid bsdfSamples
 
 
         // Second ray
@@ -49,7 +55,11 @@ public:
             return result * bgLight;
         }
 
-        return result * its2.evaluateEmission();
+        if (its2.instance->emission() != nullptr) {
+            return result * its2.evaluateEmission();
+        }
+
+        return neeHitLight ? result : Color::black();
     }
 
     std::string toString() const override {

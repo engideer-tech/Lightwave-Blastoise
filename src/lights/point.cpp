@@ -16,7 +16,7 @@ public:
     }
 
     DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {
-        const Vector wi = origin - m_position;
+        const Vector wi = m_position - origin;
         const float distanceSquared = wi.lengthSquared();
         const float distance = std::sqrt(distanceSquared);
         const Color weight = m_intensity / distanceSquared;
