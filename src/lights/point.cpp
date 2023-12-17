@@ -15,6 +15,11 @@ public:
         m_intensity = properties.get<Color>("power", Color(1.0f)) * Inv4Pi;
     }
 
+    /**
+     * Computes how strong the lighting from this point light is at the given point (light intensity falls off
+     * according to the inverse square law).
+     * Additionally computes the vector between the point and this light as well as it's length or distance.
+     */
     DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {
         const Vector wi = m_position - origin;
         const float distanceSquared = wi.lengthSquared();

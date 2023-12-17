@@ -13,7 +13,16 @@ public:
         m_albedo = properties.get<Texture>("albedo");
     }
 
+    /**
+     * Provides the reflection weight info for a given wi and wo. Since this is a diffuse material, the wo doesn't
+     * matter (although it shouldn't be outside the shading hemisphere). The only important parameter is the angle of
+     * wi: the closer to 90° it is, the less light gets reflected. This is achieved with the cosTheta term.
+     */
     BsdfEval evaluate(const Point2& uv, const Vector& wo, const Vector& wi) const override {
+        if (wo.z() <= 0.0f || wi.z() <= 0.0f) {
+            return BsdfEval::invalid();
+        }
+
         const Color albedo = m_albedo->evaluate(uv);
         return {albedo * InvPi * Frame::cosTheta(wi)};
     }

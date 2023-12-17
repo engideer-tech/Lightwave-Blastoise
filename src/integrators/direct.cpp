@@ -2,17 +2,18 @@
 
 namespace lightwave {
 /**
- * Traces a single-hop path from the camera. Thus, the first intersection collects light/reflectance information,
- * and the second one only light info (given the intersections occur). If a path contains no light (neither from an
- * object nor from the background illumination), that path turns black.
+ * The direct integrator only collects direct lighting. Thus, it is limited to a single bounce (max 2 intersections).
+ * We begin with black and add light, weighted by the material reflectance/BSDF.
+ * If the scene contains lights, we also fire a shadow ray at the first intersection towards a randomly chosen light
+ * in the scene. If the light isn't occuled, we collect it's lighting data at this point ("Next-Event Estimation").
+ * This is only done for non-intersectable lights, since those with rigid bodies could instead be hit traditionally.
  */
 class DirectIntegrator : public SamplingIntegrator {
 public:
     explicit DirectIntegrator(const Properties& properties) : SamplingIntegrator(properties) {}
 
     Color Li(const Ray& ray, Sampler& rng) override {
-        Color result = Color::white();
-        bool neeHitLight = false;
+        Color result = Color::black();
 
         // First ray
         const Intersection its1 = m_scene->intersect(ray, rng);
@@ -23,27 +24,23 @@ public:
         if (its1.instance->emission() != nullptr) {
             // TODO: ask tutor on why this early return is needed.
             //  If it's not there, in emission.xml you always multiply the light sphere colors by the blue sphere.
-            return result * its1.evaluateEmission();
+            return its1.evaluateEmission();
         }
 
+        // Next-event estimation (shadow ray + lighting data collection)
         if (m_scene->hasLights()) {
             const LightSample sampleLight = m_scene->sampleLight(rng);
             if (!sampleLight.light->canBeIntersected()) {
-                const DirectLightSample lightProps = sampleLight.light->sampleDirect(its1.position, rng);
-                const Ray shadowRay = {its1.position, lightProps.wi};
-                if (!m_scene->intersect(shadowRay, lightProps.distance, rng)) {
-                    const BsdfEval bsdfEval = its1.evaluateBsdf(lightProps.wi);
-                    result += lightProps.weight / sampleLight.probability;
-                    result *= bsdfEval.value;
-                    neeHitLight = true;
+                const DirectLightSample sampleLightData = sampleLight.light->sampleDirect(its1.position, rng);
+                const Ray shadowRay = {its1.position, sampleLightData.wi.normalized()};
+                if (!m_scene->intersect(shadowRay, sampleLightData.distance, rng)) {
+                    const BsdfEval bsdfEval = its1.evaluateBsdf(sampleLightData.wi.normalized());
+                    result += (sampleLightData.weight / sampleLight.probability) * bsdfEval.value;
                 }
             }
         }
 
         const BsdfSample bsdfSample = its1.sampleBsdf(rng);
-        if (!neeHitLight) {
-            result *= bsdfSample.weight;
-        }
         // TODO: ask tutor how to properly handle invalid bsdfSamples
 
 
@@ -52,14 +49,14 @@ public:
         const Intersection its2 = m_scene->intersect(ray2, rng);
         if (!its2) {
             const Color bgLight = m_scene->evaluateBackground(ray2.direction).value;
-            return result * bgLight;
+            return result + bgLight * bsdfSample.weight;
         }
 
         if (its2.instance->emission() != nullptr) {
-            return result * its2.evaluateEmission();
+            return result + its2.evaluateEmission() * bsdfSample.weight;
         }
 
-        return neeHitLight ? result : Color::black();
+        return result;
     }
 
     std::string toString() const override {
