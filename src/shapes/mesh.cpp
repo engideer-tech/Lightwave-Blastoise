@@ -77,6 +77,7 @@ protected:
             return false;
         }
         its.t = t;
+        // TODO: investigate using uv-interpolated position instead of ray multiplication, to ensure point is on triangle
         its.position = ray(t);
 
         const Vertex interpolatedVertex = Vertex::interpolate({u, v}, v0V, v1V, v2V);

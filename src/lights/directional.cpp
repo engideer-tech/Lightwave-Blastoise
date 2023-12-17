@@ -3,34 +3,30 @@
 namespace lightwave {
 
 class DirectionalLight final : public Light {
-    Color m_power;
-    Point m_position;
+private:
+    ///
+    Vector m_direction;
+    /// Strength and color of the light
+    Color m_intensity;
 
 public:
-    DirectionalLight(const Properties &properties) {
-        m_power = properties.get<Color>("power");
-        m_position = properties.get<Point>("position");
-    }
-    DirectLightSample sampleDirect(const Point &origin,
-                                   Sampler &rng) const override {
-
-        Vector direction = (m_position - origin).normalized();
-        Color intensity = m_power;
-        return{
-                .wi = direction,
-                .weight = intensity
-        };
+    explicit DirectionalLight(const Properties& properties) {
+        m_direction = properties.get<Vector>("direction").normalized();
+        m_intensity = properties.get<Color>("intensity", Color(1.0f));
     }
 
-    bool canBeIntersected() const override { return false; }
+    DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {
+    }
+
+    bool canBeIntersected() const override {
+        return false;
+    }
 
     std::string toString() const override {
-        return tfm::format("DirectionalLight[\n"
-                           "]");
+        return tfm::format("DirectionalLight[]");
     }
 };
 
 } // namespace lightwave
 
 REGISTER_LIGHT(DirectionalLight, "directional")
-

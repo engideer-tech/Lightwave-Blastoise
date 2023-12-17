@@ -3,33 +3,33 @@
 namespace lightwave {
 
 class PointLight final : public Light {
-    Color m_power;
+private:
+    /// Position of the light in world coordinates
     Point m_position;
+    /// Intensity and color of the light
+    Color m_intensity;
 
 public:
-    PointLight(const Properties &properties) {
-        m_power = properties.get<Color>("power");
+    explicit PointLight(const Properties& properties) {
         m_position = properties.get<Point>("position");
-    }
-    DirectLightSample sampleDirect(const Point &origin,
-                                   Sampler &rng) const override {
-
-        Vector direction = (m_position - origin).normalized();
-        float distance = (m_position - origin).length();
-        Color intensity = m_power/(4.0f*Pi*1.0f*1.0f); //formula from the slides,radius assumed to be 1
-        Color intensity_after_falloff = (1.0f*1.0f*intensity)/(distance*distance); //inverse square law
-        return{
-            .wi = direction,
-            .weight = intensity_after_falloff,
-            .distance = distance,
-        };
+        m_intensity = properties.get<Color>("power", Color(1.0f)) * Inv4Pi;
     }
 
-    bool canBeIntersected() const override { return false; }
+    DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {
+        const Vector wi = origin - m_position;
+        const float distanceSquared = wi.lengthSquared();
+        const float distance = std::sqrt(distanceSquared);
+        const Color weight = m_intensity / distanceSquared;
+
+        return {wi, weight, distance};
+    }
+
+    bool canBeIntersected() const override {
+        return false;
+    }
 
     std::string toString() const override {
-        return tfm::format("PointLight[\n"
-                           "]");
+        return tfm::format("PointLight[]");
     }
 };
 
