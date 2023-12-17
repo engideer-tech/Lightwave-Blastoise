@@ -25,6 +25,18 @@ public:
             return result * its1.evaluateEmission();
         }
 
+        if (m_scene->hasLights()) {
+            const LightSample sampleLight = m_scene->sampleLight(rng);
+            if (!sampleLight.light->canBeIntersected()) {
+                const DirectLightSample lightProps = sampleLight.light->sampleDirect(its1.position, rng);
+                const Ray shadowRay = {its1.position, lightProps.wi};
+                if (m_scene->intersect(shadowRay, lightProps.distance, rng)) {
+                    const BsdfEval bsdfEval = its1.evaluateBsdf(lightProps.wi);
+                    result += (lightProps.weight * bsdfEval.value) / sampleLight.probability;
+                }
+            }
+        }
+
         const BsdfSample bsdfSample = its1.sampleBsdf(rng);
         result *= bsdfSample.weight;
 
@@ -35,24 +47,6 @@ public:
         if (!its2) {
             const Color bgLight = m_scene->evaluateBackground(ray2.direction).value;
             return result * bgLight;
-        }
-
-        if (m_scene->hasLights()) {
-            LightSample light_sampled = m_scene->sampleLight(rng);
-            if (!light_sampled.light->canBeIntersected()) {
-                Point current_shading_point = its1.position;
-                DirectLightSample direct_light_sampled = light_sampled.light->sampleDirect(current_shading_point, rng);
-                Vector light_direction = direct_light_sampled.wi;
-                BsdfEval bsdf = its1.evaluateBsdf(light_direction);
-                Ray Shadow_Ray = {its1.position, light_direction};
-                Intersection shadow_intersect = m_scene->intersect(Shadow_Ray, rng);
-                bool isVisible = shadow_intersect && shadow_intersect.wo.length() > direct_light_sampled.distance;
-                //Color result_val = bsdf.value;
-                if (isVisible) {
-                    result += (bsdf.value * direct_light_sampled.weight) / light_sampled.probability;
-                }
-                return result;
-            }
         }
 
         return result * its2.evaluateEmission();

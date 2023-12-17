@@ -14,7 +14,6 @@ public:
     }
 
     BsdfEval evaluate(const Point2& uv, const Vector& wo, const Vector& wi) const override {
-        // FIXME: likely not yet correct
         const Color albedo = m_albedo->evaluate(uv);
         return {albedo * InvPi * Frame::cosTheta(wi)};
     }

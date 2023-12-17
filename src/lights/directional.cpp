@@ -16,6 +16,7 @@ public:
     }
 
     DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {
+        NOT_IMPLEMENTED
     }
 
     bool canBeIntersected() const override {

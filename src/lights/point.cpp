@@ -21,7 +21,7 @@ public:
         const float distance = std::sqrt(distanceSquared);
         const Color weight = m_intensity / distanceSquared;
 
-        return {wi, weight, distance};
+        return {wi.normalized(), weight, distance};
     }
 
     bool canBeIntersected() const override {
