@@ -15,7 +15,7 @@ private:
 public:
     explicit PointLight(const Properties& properties) {
         m_position = properties.get<Point>("position");
-        m_intensity = properties.get<Color>("power", Color(1.0f))*Inv4Pi;
+        m_intensity = properties.get<Color>("power", Color(1.0f)) * Inv4Pi;
     }
 
     /**
@@ -26,7 +26,7 @@ public:
     DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {
         const Vector wi = m_position - origin;
         const float distanceSquared = wi.lengthSquared();
-        const float distance = wi.length();
+        const float distance = std::sqrt(distanceSquared);
         const Color weight = m_intensity / distanceSquared;
 
         return {wi.normalized(), weight, distance};

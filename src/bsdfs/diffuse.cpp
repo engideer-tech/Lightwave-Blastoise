@@ -2,7 +2,7 @@
 
 namespace lightwave {
 /**
- * Models the BRDF/BSDF (light reflection) for a simple diffuse/Lambertian (uniformly scattering) material.
+ * A diffuse/Lambertian material scatters light randomly and uniformly.
  */
 class Diffuse : public Bsdf {
 private:
@@ -48,10 +48,11 @@ public:
     }
 
     std::string toString() const override {
-        return tfm::format("Diffuse[\n"
-                           "  albedo = %s\n"
-                           "]",
-                           indent(m_albedo)
+        return tfm::format(
+                "Diffuse[\n"
+                "  albedo = %s\n"
+                "]",
+                indent(m_albedo)
         );
     }
 };
