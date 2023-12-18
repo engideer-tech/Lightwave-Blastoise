@@ -1,7 +1,10 @@
 #include <lightwave.hpp>
 
 namespace lightwave {
-
+/**
+ * A light, modeled with a single point in space, shining equally strong in all directions from it.
+ * Suffers from light intensity fall-off.
+ */
 class PointLight final : public Light {
 private:
     /// Position of the light in world coordinates

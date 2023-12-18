@@ -1,10 +1,13 @@
 #include <lightwave.hpp>
 
 namespace lightwave {
-
+/**
+ * A light so infinitely far away that it's modeled by a single direction vector. All its rays are parallel.
+ * Doesn't suffer from light intensity fall-off.
+ */
 class DirectionalLight final : public Light {
 private:
-    ///
+    /// Direction in which the light is shining
     Vector m_direction;
     /// Strength and color of the light
     Color m_intensity;
@@ -16,7 +19,7 @@ public:
     }
 
     DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {
-        NOT_IMPLEMENTED
+        return {m_direction, m_intensity, Infinity};
     }
 
     bool canBeIntersected() const override {
