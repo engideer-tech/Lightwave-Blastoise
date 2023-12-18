@@ -20,8 +20,15 @@ public:
         // transition from specular to rough. For numerical stability, we avoid
         // extremely specular distributions (alpha values below 10^-3)
         const auto alpha = std::max(float(1e-3), sqr(m_roughness->scalar(uv)));
+        Vector halfway_vector = wi+wo/(wi+wo).normalized();
+        const float D = microfacet::evaluateGGX(alpha,halfway_vector);
+        const float G_omega_o = microfacet::smithG1(alpha,halfway_vector,wo);
+        const float G_omega_i = microfacet::smithG1(alpha,halfway_vector,wi);
 
-        NOT_IMPLEMENTED
+        Color value = (m_reflectance->evaluate(uv)*D*G_omega_i*G_omega_o)/(4.0f*Frame::cosTheta(wi)*Frame::cosTheta(wo));
+        return{
+            .value=value
+        };
 
         // hints:
         // * the microfacet normal can be computed from `wi' and `wo'
