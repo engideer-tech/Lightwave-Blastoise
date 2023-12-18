@@ -34,3 +34,4 @@ public:
 } // namespace lightwave
 
 REGISTER_LIGHT(DirectionalLight, "directional")
+

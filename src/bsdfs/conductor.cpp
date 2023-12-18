@@ -20,7 +20,14 @@ public:
 
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
-        NOT_IMPLEMENTED
+        //To find wi, we use the given reflect function in math.cpp
+        const Vector normal = Vector(0.0f,0.0f,1.0f);
+        const Vector wi = reflect(wo,normal);
+        Color reflectance = m_reflectance->evaluate(uv);
+        return{
+            .wi = wi,
+            .weight = reflectance
+        };
     }
 
     std::string toString() const override {
