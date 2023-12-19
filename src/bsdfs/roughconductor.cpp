@@ -21,7 +21,7 @@ public:
         // extremely specular distributions (alpha values below 10^-3)
         const float alpha = std::max(1e-3f, sqr(m_roughness->scalar(uv)));
 
-        const Vector normal = (wi + wo / (wi + wo)).normalized();
+        const Vector normal = (wi + wo).normalized();
         const float D = microfacet::evaluateGGX(alpha, normal);
         const float G_wi = microfacet::smithG1(alpha, normal, wi);
         const float G_wo = microfacet::smithG1(alpha, normal, wo);
