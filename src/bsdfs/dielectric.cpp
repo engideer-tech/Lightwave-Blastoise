@@ -57,7 +57,7 @@ public:
         Vector wi;
         Color weight;
         const float reflectProbability = fresnelDielectric(wo.z(), eta);
-        if (rng.next() <= reflectProbability) {
+        if (rng.next() < reflectProbability) {
             // reflect
             wi = reflect(wo, normal);
             weight = m_reflectance->evaluate(uv);

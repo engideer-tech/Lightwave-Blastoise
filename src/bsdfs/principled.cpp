@@ -27,6 +27,10 @@ struct MetallicLobe {
     Color color;
 
     BsdfEval evaluate(const Vector& wo, const Vector& wi) const {
+        if (Frame::cosTheta(wi) == 0.0f || Frame::cosTheta(wo) == 0.0f) {
+            return {Color::black()};
+        }
+
         const Vector normal = (wi + wo).normalized();
         const float D = microfacet::evaluateGGX(alpha, normal);
         const float G_wi = microfacet::smithG1(alpha, normal, wi);
@@ -107,7 +111,7 @@ public:
         // `combination.diffuseSelectionProb`) or `combination.metallic`
         const Combination combination = combine(uv, wo);
 
-        if (rng.next() <= combination.diffuseSelectionProb && combination.diffuseSelectionProb != 0.0f) {
+        if (rng.next() < combination.diffuseSelectionProb) {
             const BsdfSample sample = combination.diffuse.sample(wo, rng);
             return {sample.wi, sample.weight / combination.diffuseSelectionProb};
         } else {

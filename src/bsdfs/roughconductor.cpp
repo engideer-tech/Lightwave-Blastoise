@@ -16,6 +16,10 @@ public:
     }
 
     BsdfEval evaluate(const Point2& uv, const Vector& wo, const Vector& wi) const override {
+        if (Frame::cosTheta(wi) == 0.0f || Frame::cosTheta(wo) == 0.0f) {
+            return {Color::black()};
+        }
+
         // Using the squared roughness parameter results in a more gradual
         // transition from specular to rough. For numerical stability, we avoid
         // extremely specular distributions (alpha values below 10^-3)
@@ -38,21 +42,10 @@ public:
 
         const Vector normal = microfacet::sampleGGXVNDF(alpha, wo, rng.next2D()).normalized();
         const Vector wi = reflect(wo, normal);
-        const float normalPdf = microfacet::pdfGGXVNDF(alpha, normal, wo);
-        const float wiPdf = normalPdf * microfacet::detReflection(normal, wo);
-
         const Color R = m_reflectance->evaluate(uv);
-        const float D = microfacet::evaluateGGX(alpha, normal);
         const float G_wi = microfacet::smithG1(alpha, normal, wi);
-        const float G_wo = microfacet::smithG1(alpha, normal, wo);
 
-        const Color weight = R * G_wi;
-
-        return {wi, weight};
-
-        // hints:
-        // * do not forget to cancel out as many terms from your equations as possible!
-        //   (the resulting sample weight is only a product of two factors)
+        return {wi, R * G_wi};
     }
 
     std::string toString() const override {
