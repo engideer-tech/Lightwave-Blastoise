@@ -22,27 +22,33 @@ public:
         const float alpha = std::max(1e-3f, sqr(m_roughness->scalar(uv)));
 
         const Vector normal = (wi + wo).normalized();
+        const Color R = m_reflectance->evaluate(uv);
         const float D = microfacet::evaluateGGX(alpha, normal);
         const float G_wi = microfacet::smithG1(alpha, normal, wi);
         const float G_wo = microfacet::smithG1(alpha, normal, wo);
 
-        return {(m_reflectance->evaluate(uv) * D * G_wi * G_wo) /
-                (4.0f * Frame::cosTheta(wi) * Frame::cosTheta(wo))};
+        const Color weight = (R * D * G_wi * G_wo) /
+                             (4.0f * abs(Frame::cosTheta(wi)) * abs(Frame::cosTheta(wo)));
+
+        return {weight * Frame::cosTheta(wi)};
     }
 
     BsdfSample sample(const Point2& uv, const Vector& wo, Sampler& rng) const override {
         const float alpha = std::max(1e-3f, sqr(m_roughness->scalar(uv)));
 
         const Vector normal = microfacet::sampleGGXVNDF(alpha, wo, rng.next2D()).normalized();
+        const Vector wi = reflect(wo, normal);
         const float normalPdf = microfacet::pdfGGXVNDF(alpha, normal, wo);
         const float wiPdf = normalPdf * microfacet::detReflection(normal, wo);
-        const Vector wi = reflect(wo, normal);
-        const Color weight = m_reflectance->evaluate(uv);
 
-        return {
-                .wi = wi,
-                .weight = weight
-        };
+        const Color R = m_reflectance->evaluate(uv);
+        const float D = microfacet::evaluateGGX(alpha, normal);
+        const float G_wi = microfacet::smithG1(alpha, normal, wi);
+        const float G_wo = microfacet::smithG1(alpha, normal, wo);
+
+        const Color weight = R * G_wi;
+
+        return {wi, weight};
 
         // hints:
         // * do not forget to cancel out as many terms from your equations as possible!

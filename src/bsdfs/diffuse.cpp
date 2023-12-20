@@ -32,7 +32,7 @@ public:
      * Due to this being a diffuse material, the reflectance vector is irrelevant. The generation of the
      * incidence vector isn't fully random: the density function skews towards the middle of the shading hemisphere.
      * The equation for the weight/color of this sample equals:
-     * @code albedo * InvPi / cosineHemispherePdf(wi) * Frame::cosTheta(wi) @endcode
+     * @code albedo * InvPi * Frame::cosTheta(wi) / cosineHemispherePdf(wi) @endcode
      * Since the terms cancel out, the weight equals just the albedo.
      */
     BsdfSample sample(const Point2& uv, const Vector& wo, Sampler& rng) const override {

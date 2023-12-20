@@ -27,23 +27,24 @@ struct MetallicLobe {
     Color color;
 
     BsdfEval evaluate(const Vector& wo, const Vector& wi) const {
-        NOT_IMPLEMENTED
+        const Vector normal = (wi + wo).normalized();
+        const float D = microfacet::evaluateGGX(alpha, normal);
+        const float G_wi = microfacet::smithG1(alpha, normal, wi);
+        const float G_wo = microfacet::smithG1(alpha, normal, wo);
 
-        // hints:
-        // * copy your roughconductor bsdf evaluate here
-        // * you do not need to query textures
-        //   * the reflectance is given by `color'
-        //   * the variable `alpha' is already provided for you
+        const Color weight = (color * D * G_wi * G_wo) /
+                             (4.0f * abs(Frame::cosTheta(wi)) * abs(Frame::cosTheta(wo)));
+
+        return {weight * Frame::cosTheta(wi)};
     }
 
     BsdfSample sample(const Vector& wo, Sampler& rng) const {
-        NOT_IMPLEMENTED
+        const Vector normal = microfacet::sampleGGXVNDF(alpha, wo, rng.next2D()).normalized();
+        const Vector wi = reflect(wo, normal);
+        const float G_wi = microfacet::smithG1(alpha, normal, wi);
+        const Color weight = color * G_wi;
 
-        // hints:
-        // * copy your roughconductor bsdf sample here
-        // * you do not need to query textures
-        //   * the reflectance is given by `color'
-        //   * the variable `alpha' is already provided for you
+        return {wi, weight};
     }
 };
 
@@ -61,7 +62,7 @@ class Principled : public Bsdf {
 
     Combination combine(const Point2& uv, const Vector& wo) const {
         const Color baseColor = m_baseColor->evaluate(uv);
-        const float alpha = std::max(float(1e-3), sqr(m_roughness->scalar(uv)));
+        const float alpha = std::max(1e-3f, sqr(m_roughness->scalar(uv)));
         const float specular = m_specular->scalar(uv);
         const float metallic = m_metallic->scalar(uv);
         const float F = specular * schlick((1 - metallic) * 0.08f, Frame::cosTheta(wo));
@@ -108,10 +109,18 @@ public:
 
         if (rng.next() <= combination.diffuseSelectionProb) {
             const BsdfSample sample = combination.diffuse.sample(wo, rng);
-            return {sample.wi, sample.weight / combination.diffuseSelectionProb};
+            const Color weight = sample.weight / combination.diffuseSelectionProb;
+            if (std::isnan(weight.r()) || std::isnan(weight.g()) || std::isnan(weight.b())) {
+                std::cout << "nan diffuse\n";
+            }
+            return {sample.wi, weight};
         } else {
             const BsdfSample sample = combination.metallic.sample(wo, rng);
-            return {sample.wi, sample.weight / (1 - combination.diffuseSelectionProb)};
+            const Color weight = sample.weight / (1.0f - combination.diffuseSelectionProb);
+            if (std::isnan(weight.r()) || std::isnan(weight.g()) || std::isnan(weight.b())) {
+                std::cout << "nan metallic\n";
+            }
+            return {sample.wi, weight};
         }
     }
 
