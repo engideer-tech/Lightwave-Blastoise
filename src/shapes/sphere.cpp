@@ -12,7 +12,7 @@ private:
      * @param position intersection or area sample position on the object's surface
      */
     inline static void setSurfaceEventData(SurfaceEvent& surf, const Point& position) {
-        surf.position = position;
+        surf.position = Vector(position).normalized();
 
         const Vector normal = Vector(position).normalized();
         surf.frame = Frame(normal);

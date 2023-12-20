@@ -107,20 +107,12 @@ public:
         // `combination.diffuseSelectionProb`) or `combination.metallic`
         const Combination combination = combine(uv, wo);
 
-        if (rng.next() <= combination.diffuseSelectionProb) {
+        if (rng.next() <= combination.diffuseSelectionProb && combination.diffuseSelectionProb != 0.0f) {
             const BsdfSample sample = combination.diffuse.sample(wo, rng);
-            const Color weight = sample.weight / combination.diffuseSelectionProb;
-            if (std::isnan(weight.r()) || std::isnan(weight.g()) || std::isnan(weight.b())) {
-                std::cout << "nan diffuse\n";
-            }
-            return {sample.wi, weight};
+            return {sample.wi, sample.weight / combination.diffuseSelectionProb};
         } else {
             const BsdfSample sample = combination.metallic.sample(wo, rng);
-            const Color weight = sample.weight / (1.0f - combination.diffuseSelectionProb);
-            if (std::isnan(weight.r()) || std::isnan(weight.g()) || std::isnan(weight.b())) {
-                std::cout << "nan metallic\n";
-            }
-            return {sample.wi, weight};
+            return {sample.wi, sample.weight / (1.0f - combination.diffuseSelectionProb)};
         }
     }
 
