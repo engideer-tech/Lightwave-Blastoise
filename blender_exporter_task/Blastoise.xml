@@ -1,0 +1,37 @@
+<scene id="scene">
+  <camera type="perspective">
+    <integer name="width" value="1920"/>
+    <integer name="height" value="1080"/>
+    <float name="fov" value="39.598"/>
+    <string name="fovAxis" value="x"/>
+    <transform>
+      <matrix value="0.94888,-0.050467,0.31159,-7.4357,  -0.31565,-0.15171,0.93667,-41.246,  -1.0508e-06,-0.98714,-0.15988,13.534,  0,0,0,1"/>
+    </transform>
+  </camera>
+  <light type="directional" direction="0.59266,-0.4141,0.69086" intensity="5,5,5"/>
+  <instance>
+    <bsdf type="principled">
+      <texture name="baseColor" type="constant" value="0.48845,0.48845,0.48845"/>
+      <texture name="roughness" type="constant" value="0.5"/>
+      <texture name="metallic" type="constant" value="1"/>
+      <texture name="specular" type="constant" value="0.74545"/>
+    </bsdf>
+    <shape type="mesh" filename="meshes/Blastoise.ply"/>
+    <transform>
+      <matrix value="1,0,0,0,  0,1,0,0,  0,0,1,0,  0,0,0,1"/>
+    </transform>
+  </instance>
+  <light type="point" position="11.149,-5.1908,10.907" power="0.33098,0,200"/>
+  <light type="point" position="-1.3856,-4.6855,10.835" power="0.33098,0,200"/>
+  <light type="envmap">
+    <texture type="constant" value="0.050876,0.050876,0.050876"/>
+    <transform>
+      <matrix value="1,0,0,0,  0,0,1,0,  0,-1,0,0,  0,0,0,1"/>
+    </transform>
+  </light>
+</scene>
+<integrator type="direct" nee="true" mis="true">
+  <ref id="scene"/>
+  <image id="Blastoise"/>
+  <sampler type="independent" count="64"/>
+</integrator>

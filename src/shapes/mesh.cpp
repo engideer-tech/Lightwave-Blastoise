@@ -77,16 +77,14 @@ protected:
             return false;
         }
         its.t = t;
-        // TODO: investigate using uv-interpolated position instead of ray multiplication, to ensure point is on triangle
-        its.position = ray(t);
 
         const Vertex interpolatedVertex = Vertex::interpolate({u, v}, v0V, v1V, v2V);
+        its.position = interpolatedVertex.position;
 
         const Vector normal = m_smoothNormals ? interpolatedVertex.normal.normalized() : v0v1.cross(v0v2).normalized();
         its.frame = Frame(normal);
 
         its.uv = interpolatedVertex.texcoords;
-
         its.pdf = 0.0f; // TODO
 
         return true;
