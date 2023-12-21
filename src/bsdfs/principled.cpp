@@ -97,8 +97,6 @@ public:
     }
 
     BsdfEval evaluate(const Point2& uv, const Vector& wo, const Vector& wi) const override {
-        // hint: evaluate `combination.diffuse` and `combination.metallic` and
-        // combine their results
         const Combination combination = combine(uv, wo);
         const BsdfEval diffuse = combination.diffuse.evaluate(wo, wi);
         const BsdfEval mettalic = combination.metallic.evaluate(wo, wi);
@@ -107,8 +105,6 @@ public:
     }
 
     BsdfSample sample(const Point2& uv, const Vector& wo, Sampler& rng) const override {
-        // hint: sample either `combination.diffuse` (probability
-        // `combination.diffuseSelectionProb`) or `combination.metallic`
         const Combination combination = combine(uv, wo);
 
         if (rng.next() < combination.diffuseSelectionProb) {

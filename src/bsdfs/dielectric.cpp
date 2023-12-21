@@ -40,6 +40,8 @@ public:
      * with wi. The @c fresnelDielectric function also takes care of the total internal reflection case by returning
      * a 1 in that case (thus taking up the entire rng spectrum). Finally, if we're coming from inside instead of the
      * outside of the material, we need to flip the ior/eta and the normal.
+     * The reason why we don't need to divide by the Fresnel probability is because the Fresnel term is already part
+     * of the weight, and is thus cancelled out by the division.
      */
     BsdfSample sample(const Point2& uv, const Vector& wo, Sampler& rng) const override {
         float eta;
@@ -64,6 +66,8 @@ public:
         } else {
             // refract
             wi = refract(wo, normal, eta);
+            // The reason to divide by eta squared when refracting, is because refraction changes our solid angles.
+            // That is, the angle between two wi's will be different after refraction.
             weight = m_transmittance->evaluate(uv) / sqr(eta);
         }
         return {wi, weight};

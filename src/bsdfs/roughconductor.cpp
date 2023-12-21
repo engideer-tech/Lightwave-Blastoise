@@ -16,6 +16,7 @@ public:
     }
 
     BsdfEval evaluate(const Point2& uv, const Vector& wo, const Vector& wi) const override {
+        // todo: investigate if we can use <=. in that case we can also leave out the abs(), since this ain't a dielectric
         if (Frame::cosTheta(wi) == 0.0f || Frame::cosTheta(wo) == 0.0f) {
             return {Color::black()};
         }
