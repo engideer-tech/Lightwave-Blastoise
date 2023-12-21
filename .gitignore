@@ -5,6 +5,7 @@ __pycache__
 /.idea/*
 !/.idea/codeStyles
 !/.idea/inspectionProfiles
+/hs_err_*
 
 /cmake-build-debug
 /cmake-build-release
