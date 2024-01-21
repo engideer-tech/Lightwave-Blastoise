@@ -18,17 +18,10 @@ public:
     }
 
     Color evaluate(const Point2& uv) const override {
-        // Apply scale to UV coordinates
         const int scaledU = static_cast<int>(floorf(uv.x() * m_scale.x()));
         const int scaledV = static_cast<int>(floorf(uv.y() * m_scale.y()));
 
-        // Calculate checkerboard pattern
-        const bool uEven = scaledU % 2 == 0;
-        const bool vEven = scaledV % 2 == 0;
-        if (uEven == vEven) {
-            return m_color0;
-        }
-        return m_color1;
+        return (scaledU + scaledV) % 2 == 0 ? m_color0 : m_color1;
     }
 
     std::string toString() const override {

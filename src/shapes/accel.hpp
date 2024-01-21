@@ -180,7 +180,7 @@ class AccelerationStructure : public Shape {
         const float rightArea = surfaceArea(rightBounds);
         const float totalArea = leftArea + rightArea;
 
-        return (leftArea * leftCount + rightArea * rightCount) /totalArea;
+        return (leftArea * leftCount + rightArea * rightCount) / totalArea;
     }
 
     NodeIndex binning(Node& node, int splitAxis) {
@@ -198,7 +198,8 @@ class AccelerationStructure : public Shape {
             const float centroid = getCentroid(m_primitiveIndices[node.leftFirst + i])[splitAxis];
 
 // Determine which bin the primitive belongs to based on its centroid
-            int binIndex = static_cast<int>(((centroid - node.aabb.min()[splitAxis]) / (node.aabb.max()[splitAxis] - node.aabb.min()[splitAxis])) * numBins);
+            int binIndex = static_cast<int>(((centroid - node.aabb.min()[splitAxis]) /
+                                             (node.aabb.max()[splitAxis] - node.aabb.min()[splitAxis])) * numBins);
 // int binIndex = static_cast<int>(((centroid - node.aabb.min()[splitAxis]) / node.aabb.diagonal()[splitAxis]) * numBins);
 
             binIndex = std::clamp(binIndex, 0, numBins - 1); // Ensure binIndex is within range
@@ -236,7 +237,8 @@ class AccelerationStructure : public Shape {
             }
         }
 
-        float splitPos = node.aabb.min()[splitAxis] + ((node.aabb.max()[splitAxis] - node.aabb.min()[splitAxis]) * (bestSplitIndex / (float)numBins));
+        float splitPos = node.aabb.min()[splitAxis] + ((node.aabb.max()[splitAxis] - node.aabb.min()[splitAxis]) *
+                                                       (bestSplitIndex / (float) numBins));
 
         return splitPos;
         // work with centroids of objects, init bounds to outermost centroids
@@ -275,7 +277,7 @@ class AccelerationStructure : public Shape {
                 if (getCentroid(m_primitiveIndices[firstRightIndex])[splitAxis] < splitPos) {
                     firstRightIndex++;
                 } else {
-                    std::swap(m_primitiveIndices[firstRightIndex],m_primitiveIndices[lastLeftIndex--]);
+                    std::swap(m_primitiveIndices[firstRightIndex], m_primitiveIndices[lastLeftIndex--]);
                 }
             }
         }

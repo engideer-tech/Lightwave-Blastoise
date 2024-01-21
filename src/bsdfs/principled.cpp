@@ -89,7 +89,7 @@ class Principled : public Bsdf {
     }
 
 public:
-    Principled(const Properties& properties) {
+    explicit Principled(const Properties& properties) {
         m_baseColor = properties.get<Texture>("baseColor");
         m_roughness = properties.get<Texture>("roughness");
         m_metallic = properties.get<Texture>("metallic");

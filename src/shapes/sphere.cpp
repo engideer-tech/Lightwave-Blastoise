@@ -27,7 +27,7 @@ public:
     explicit Sphere(const Properties& properties) {}
 
     /**
-     * Calculates whether the intersection happened and its location using geometric approach. That is, we span a
+     * Calculates whether the intersection happened and its location using a geometric approach. That is, we span a
      * triangle between the ray origin, sphere center, and middle point of two possible intersection points, as well as
      * between the first possible intersection, sphere center, and middle point. Then compute unknown sides to get
      * intersection distance.
