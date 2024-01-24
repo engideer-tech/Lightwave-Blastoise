@@ -29,6 +29,7 @@ namespace lightwave {
  * @see TriangleMesh
  */
 class AccelerationStructure : public Shape {
+private:
     /// @brief The datatype used to index BVH nodes and the primitive index
     /// remapping.
     typedef int32_t NodeIndex;
@@ -45,7 +46,7 @@ class AccelerationStructure : public Shape {
          * always directly follows the left child, i.e., the index of the right
          * child is always @code leftFirst + 1 @endcode .
          * @note For efficiency, we store primitives so that children of a leaf
-         * node are always contigous in m_primitiveIndices.
+         * node are always contiguous in m_primitiveIndices.
          */
         NodeIndex leftFirst;
         /// @brief The number of primitives in a leaf node, or 0 to indicate
@@ -115,16 +116,14 @@ class AccelerationStructure : public Shape {
             // this allows us to traverse the children in the order they are
             // intersected in, which can help prune a lot of unnecessary
             // intersection tests.
-            const auto leftT = intersectAABB(m_nodes[node.leftChildIndex()].aabb, ray);
-            const auto rightT = intersectAABB(m_nodes[node.rightChildIndex()].aabb, ray);
-            if (leftT < rightT) { // left child is hit first; test left child
-                // first, then right child
+            const float leftT = intersectAABB(m_nodes[node.leftChildIndex()].aabb, ray);
+            const float rightT = intersectAABB(m_nodes[node.rightChildIndex()].aabb, ray);
+            if (leftT < rightT) { // left child is hit first; test left child first, then right child
                 if (leftT < its.t)
                     wasIntersected |= intersectNode(m_nodes[node.leftChildIndex()], ray, its, rng);
                 if (rightT < its.t)
                     wasIntersected |= intersectNode(m_nodes[node.rightChildIndex()], ray, its, rng);
-            } else { // right child is hit first; test right child first, then
-                // left child
+            } else { // right child is hit first; test right child first, then left child
                 if (rightT < its.t)
                     wasIntersected |= intersectNode(m_nodes[node.rightChildIndex()], ray, its, rng);
                 if (leftT < its.t)
@@ -137,18 +136,19 @@ class AccelerationStructure : public Shape {
     /// @brief Performs a slab test to intersect a bounding box with a ray,
     /// returning Infinity in case the ray misses.
     float intersectAABB(const Bounds& bounds, const Ray& ray) const {
-        // but this only saves us ~1%, so let's not do it. intersect all axes at
-        // once with the minimum slabs of the bounding box
+        // intersect all axes at once with the minimum slabs of the bounding box
+        // you could save the ray.dir inverse in the ray to avoid 6 divisions,
+        // but this only saves us ~1%, so let's not do it.
         const auto t1 = (bounds.min() - ray.origin) / ray.direction;
         // intersect all axes at once with the maximum slabs of the bounding box
         const auto t2 = (bounds.max() - ray.origin) / ray.direction;
 
         // the elementwiseMin picks the near slab for each axis, of which we
         // then take the maximum
-        const auto tNear = elementwiseMin(t1, t2).maxComponent();
+        const float tNear = elementwiseMin(t1, t2).maxComponent();
         // the elementwiseMax picks the far slab for each axis, of which we then
         // take the minimum
-        const auto tFar = elementwiseMax(t1, t2).minComponent();
+        const float tFar = elementwiseMax(t1, t2).minComponent();
 
         if (tFar < tNear)
             return Infinity; // the ray does not intersect the bounding box
@@ -171,8 +171,7 @@ class AccelerationStructure : public Shape {
     /// @brief Computes the surface area of a bounding box.
     float surfaceArea(const Bounds& bounds) const {
         const auto size = bounds.diagonal();
-        return 2 * (size.x() * size.y() + size.x() * size.z() +
-                    size.y() * size.z());
+        return 2 * (size.x() * size.y() + size.x() * size.z() + size.y() * size.z());
     }
 
     float SAHCost(Bounds leftBounds, Bounds rightBounds, int leftCount, int rightCount) {
@@ -246,7 +245,7 @@ class AccelerationStructure : public Shape {
 
     /// @brief Attempts to subdivide a given BVH node.
     void subdivide(Node& parent) {
-        // only subdivide if enough children are available.
+        // only subdivide if enough children are available
         if (parent.primitiveCount <= 2) {
             return;
         }
@@ -285,18 +284,18 @@ class AccelerationStructure : public Shape {
         const NodeIndex leftCount = firstRightIndex - parent.firstPrimitiveIndex();
         const NodeIndex rightCount = parent.primitiveCount - leftCount;
 
+        // if either child gets no primitives, we abort subdividing
         if (leftCount == 0 || rightCount == 0) {
-            // if either child gets no primitives, we abort subdividing
             return;
         }
 
         // the two children will always be contiguous in our m_nodes list
-        const NodeIndex leftChildIndex = (NodeIndex) (m_nodes.size() + 0);
-        const NodeIndex rightChildIndex = (NodeIndex) (m_nodes.size() + 1);
+        const auto leftChildIndex = static_cast<NodeIndex>(m_nodes.size() + 0);
+        const auto rightChildIndex = static_cast<NodeIndex>(m_nodes.size() + 1);
         parent.primitiveCount = 0; // mark the parent node as internal node
         parent.leftFirst = leftChildIndex;
 
-        // 'parent' breaks
+        // parent's breaks
         m_nodes.emplace_back();
         m_nodes[leftChildIndex].leftFirst = firstPrimitive;
         m_nodes[leftChildIndex].primitiveCount = leftCount;
@@ -337,7 +336,7 @@ protected:
         std::iota(m_primitiveIndices.begin(), m_primitiveIndices.end(), 0);
 
         // create root node
-        auto& root = m_nodes.emplace_back();
+        Node& root = m_nodes.emplace_back();
         root.leftFirst = 0;
         root.primitiveCount = numberOfPrimitives();
         computeAABB(root);
@@ -349,12 +348,17 @@ protected:
     }
 
 public:
-    bool intersect(const Ray& ray, Intersection& its,
-                   Sampler& rng) const override {
-        if (m_primitiveIndices.empty())
-            return false; // exit early if no children exist
-        if (intersectAABB(rootNode().aabb, ray) < its.t) // test root bounding box for potential hit
+    bool intersect(const Ray& ray, Intersection& its, Sampler& rng) const override {
+        // exit early if no children exist
+        if (m_primitiveIndices.empty()) {
+            return false;
+        }
+
+        // test root bounding box for potential hit
+        if (intersectAABB(rootNode().aabb, ray) < its.t) {
             return intersectNode(rootNode(), ray, its, rng);
+        }
+
         return false;
     }
 

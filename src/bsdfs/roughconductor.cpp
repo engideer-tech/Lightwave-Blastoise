@@ -16,7 +16,6 @@ public:
     }
 
     BsdfEval evaluate(const Point2& uv, const Vector& wo, const Vector& wi) const override {
-        // todo: investigate if we can use <=. in that case we can also leave out the abs(), since this ain't a dielectric
         if (Frame::cosTheta(wi) == 0.0f || Frame::cosTheta(wo) == 0.0f) {
             return {Color::black()};
         }
@@ -33,9 +32,9 @@ public:
         const float G_wo = microfacet::smithG1(alpha, normal, wo);
 
         const Color weight = (R * D * G_wi * G_wo) /
-                             (4.0f * abs(Frame::cosTheta(wi)) * abs(Frame::cosTheta(wo)));
+                             (4.0f * abs(Frame::cosTheta(wo)));
 
-        return {weight * Frame::cosTheta(wi)};
+        return {weight};
     }
 
     BsdfSample sample(const Point2& uv, const Vector& wo, Sampler& rng) const override {
