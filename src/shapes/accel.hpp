@@ -174,73 +174,26 @@ private:
         return 2 * (size.x() * size.y() + size.x() * size.z() + size.y() * size.z());
     }
 
-    float SAHCost(Bounds leftBounds, Bounds rightBounds, int leftCount, int rightCount) {
-        const float leftArea = surfaceArea(leftBounds);
-        const float rightArea = surfaceArea(rightBounds);
-        const float totalArea = leftArea + rightArea;
+    float bestSahCost(Node& node, int splitAxis, float splitPos) const {
+        Bounds leftBox, rightBox;
+        int leftCount = 0, rightCount = 0;
 
-        return (leftArea * leftCount + rightArea * rightCount) / totalArea;
-    }
+        for (int i = 0; i < node.primitiveCount; i++) {
+            const int primitiveIndex = m_primitiveIndices[node.leftFirst + i];
+            const Bounds primitiveBounds = getBoundingBox(primitiveIndex);
+            const float primitivePosition = getCentroid(primitiveIndex)[splitAxis];
 
-    NodeIndex binning(Node& node, int splitAxis) {
-        const int numBins = 96;
-
-        std::array<int, numBins> binCounts;
-        std::array<Bounds, numBins> binBounds;
-
-        for (int i = 0; i < numBins; i++) {
-            binCounts[i] = 0;
-            binBounds[i] = Bounds::empty();
-        }
-        for (NodeIndex i = 0; i < node.primitiveCount; ++i) {
-            const Bounds primBounds = getBoundingBox(m_primitiveIndices[node.leftFirst + i]);
-            const float centroid = getCentroid(m_primitiveIndices[node.leftFirst + i])[splitAxis];
-
-// Determine which bin the primitive belongs to based on its centroid
-            int binIndex = static_cast<int>(((centroid - node.aabb.min()[splitAxis]) /
-                                             (node.aabb.max()[splitAxis] - node.aabb.min()[splitAxis])) * numBins);
-// int binIndex = static_cast<int>(((centroid - node.aabb.min()[splitAxis]) / node.aabb.diagonal()[splitAxis]) * numBins);
-
-            binIndex = std::clamp(binIndex, 0, numBins - 1); // Ensure binIndex is within range
-
-// Update bin information
-            binCounts[binIndex]++;
-            binBounds[binIndex].extend(primBounds);
-        }
-
-        float minCost = Infinity;
-        NodeIndex bestSplitIndex = 0;
-        for (int i = 1; i < numBins; ++i) {
-            // Calculate SAH cost for each potential split
-            Bounds leftBounds = Bounds::empty();
-            Bounds rightBounds = Bounds::empty();
-            int leftCount = 0, rightCount = 0;
-
-            // Calculate left bounds and count
-            for (int j = 0; j < i; ++j) {
-                leftBounds.extend(binBounds[j]);
-                leftCount += binCounts[j];
-            }
-
-            // Calculate right bounds and count
-            for (int j = i; j < numBins; ++j) {
-                rightBounds.extend(binBounds[j]);
-                rightCount += binCounts[j];
-            }
-
-            const float sahCost = SAHCost(leftBounds, rightBounds, leftCount, rightCount);
-
-            if (sahCost < minCost) {
-                minCost = sahCost;
-                bestSplitIndex = i;
+            if (primitivePosition < splitPos) {
+                leftCount++;
+                leftBox.extend(primitiveBounds);
+            } else {
+                rightCount++;
+                rightBox.extend(primitiveBounds);
             }
         }
 
-        float splitPos = node.aabb.min()[splitAxis] + ((node.aabb.max()[splitAxis] - node.aabb.min()[splitAxis]) *
-                                                       (bestSplitIndex / (float) numBins));
-
-        return splitPos;
-        // work with centroids of objects, init bounds to outermost centroids
+        const float cost = leftCount * surfaceArea(leftBox) + rightCount * surfaceArea(rightBox);
+        return cost > 0 ? cost : Infinity;
     }
 
     /// @brief Attempts to subdivide a given BVH node.
@@ -254,30 +207,34 @@ private:
         const int splitAxis = parent.aabb.diagonal().maxComponentIndex();
         const NodeIndex firstPrimitive = parent.firstPrimitiveIndex();
 
-        // set to true when implementing binning
-        static constexpr bool UseSAH = false;
+        float splitCost = Infinity;
+        float splitPosition = 0;
+        for (int i = 0; i < parent.primitiveCount; i++) {
+            const float candidatePosition = getCentroid(m_primitiveIndices[parent.leftFirst + i])[splitAxis];
+            const float candidateCost = bestSahCost(parent, splitAxis, candidatePosition);
+            if (candidateCost < splitCost) {
+                splitCost = candidateCost;
+                splitPosition = candidatePosition;
+            }
+        }
 
-        // the point at which to split (note that primitives must be re-ordered
-        // so that all children of the left node will have a smaller index than
-        // firstRightIndex, and nodes on the right will have an index larger or
-        // equal to firstRightIndex)
-        NodeIndex firstRightIndex;
-        if (UseSAH) {
-            firstRightIndex = binning(parent, splitAxis);
-        } else {
-            // split in the middle
-            const float splitPos = parent.aabb.center()[splitAxis]; // pick center of bounding box
-            // as split pos
+        const float parentCost = surfaceArea(parent.aabb) * parent.primitiveCount;
+        if (splitCost >= parentCost) {
+            return;
+        }
 
-            // partition algorithm (you might remember this from quicksort)
-            firstRightIndex = firstPrimitive;
-            NodeIndex lastLeftIndex = parent.lastPrimitiveIndex();
-            while (firstRightIndex <= lastLeftIndex) {
-                if (getCentroid(m_primitiveIndices[firstRightIndex])[splitAxis] < splitPos) {
-                    firstRightIndex++;
-                } else {
-                    std::swap(m_primitiveIndices[firstRightIndex], m_primitiveIndices[lastLeftIndex--]);
-                }
+        // std::cout << tfm::format("%s\n", splitPosition);
+
+        // partition algorithm (similar to quicksort)
+        // the primitives must be re-ordered so that all children of the left node will have a smaller index than
+        // firstRightIndex, and nodes on the right will have an index larger or equal to firstRightIndex
+        NodeIndex firstRightIndex = firstPrimitive;
+        NodeIndex lastLeftIndex = parent.lastPrimitiveIndex();
+        while (firstRightIndex <= lastLeftIndex) {
+            if (getCentroid(m_primitiveIndices[firstRightIndex])[splitAxis] < splitPosition) {
+                firstRightIndex++;
+            } else {
+                std::swap(m_primitiveIndices[firstRightIndex], m_primitiveIndices[lastLeftIndex--]);
             }
         }
 
