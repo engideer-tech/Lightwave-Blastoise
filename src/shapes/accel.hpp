@@ -174,7 +174,8 @@ private:
         return 2 * (size.x() * size.y() + size.x() * size.z() + size.y() * size.z());
     }
 
-    float bestSahCost(Node& node, int splitAxis, float splitPos) const {
+    /// @brief Computes SAH cost for given split axis and position
+    float getSahCost(Node& node, int splitAxis, float splitPos) const {
         Bounds leftBox, rightBox;
         int leftCount = 0, rightCount = 0;
 
@@ -203,21 +204,24 @@ private:
             return;
         }
 
-        // pick the axis with the highest bounding box length as split axis.
-        const int splitAxis = parent.aabb.diagonal().maxComponentIndex();
         const NodeIndex firstPrimitive = parent.firstPrimitiveIndex();
 
+        // pick the axis with the highest bounding box length as split axis.
+        const int splitAxis = parent.aabb.diagonal().maxComponentIndex();
+
+        // compute split position based with lowest SAH cost
         float splitCost = Infinity;
         float splitPosition = 0;
         for (int i = 0; i < parent.primitiveCount; i++) {
             const float candidatePosition = getCentroid(m_primitiveIndices[parent.leftFirst + i])[splitAxis];
-            const float candidateCost = bestSahCost(parent, splitAxis, candidatePosition);
+            const float candidateCost = getSahCost(parent, splitAxis, candidatePosition);
             if (candidateCost < splitCost) {
                 splitCost = candidateCost;
                 splitPosition = candidatePosition;
             }
         }
 
+        // abort subdivision if its resulting cost would be worse than unsplitted parent's cost
         const float parentCost = surfaceArea(parent.aabb) * parent.primitiveCount;
         if (splitCost >= parentCost) {
             return;
@@ -240,19 +244,19 @@ private:
 
         const NodeIndex leftCount = firstRightIndex - parent.firstPrimitiveIndex();
         const NodeIndex rightCount = parent.primitiveCount - leftCount;
-
-        // if either child gets no primitives, we abort subdividing
         if (leftCount == 0 || rightCount == 0) {
+            // if either child gets no primitives, we abort subdividing
             return;
         }
 
         // the two children will always be contiguous in our m_nodes list
-        const auto leftChildIndex = static_cast<NodeIndex>(m_nodes.size() + 0);
+        const auto leftChildIndex = static_cast<NodeIndex>(m_nodes.size());
         const auto rightChildIndex = static_cast<NodeIndex>(m_nodes.size() + 1);
-        parent.primitiveCount = 0; // mark the parent node as internal node
+        // mark the parent node as internal node
+        parent.primitiveCount = 0;
         parent.leftFirst = leftChildIndex;
 
-        // parent's breaks
+        // create child nodes
         m_nodes.emplace_back();
         m_nodes[leftChildIndex].leftFirst = firstPrimitive;
         m_nodes[leftChildIndex].primitiveCount = leftCount;
