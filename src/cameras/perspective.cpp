@@ -41,15 +41,11 @@ public:
         const float RHS2 = p2y * u - p2x * v - a2 * a3 * std::sin(angle1);
         const float p3x = (1 / sqr(a3)) * (u * RHS1 - v * RHS2);
 
-        const float resolutionRatio = static_cast<float>(m_resolution.x()) / static_cast<float>(m_resolution.y());
-        const float y3 = (fovAxis == "x") != (m_resolution.x() < m_resolution.y()) ? // XOR
-                         p3x / resolutionRatio : p3x * resolutionRatio;
-
         if (fovAxis == "x") {
             xScalar = p3x;
-            yScalar = y3;
+            yScalar = p3x * (static_cast<float>(m_resolution.y()) / static_cast<float>(m_resolution.x()));
         } else {
-            xScalar = y3;
+            xScalar = p3x * (static_cast<float>(m_resolution.x()) / static_cast<float>(m_resolution.y()));
             yScalar = p3x;
         }
     }
