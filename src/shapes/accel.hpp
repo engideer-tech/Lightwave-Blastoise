@@ -175,7 +175,7 @@ private:
     }
 
     /// @brief Computes SAH cost for given split axis and position
-    float getSahCost(Node& node, int splitAxis, float splitPos) const {
+    float getSahCost(const Node& node, const int splitAxis, const float splitPosition) const {
         Bounds leftBox, rightBox;
         int leftCount = 0, rightCount = 0;
 
@@ -184,7 +184,7 @@ private:
             const Bounds primitiveBounds = getBoundingBox(primitiveIndex);
             const float primitivePosition = getCentroid(primitiveIndex)[splitAxis];
 
-            if (primitivePosition < splitPos) {
+            if (primitivePosition < splitPosition) {
                 leftCount++;
                 leftBox.extend(primitiveBounds);
             } else {
@@ -197,6 +197,25 @@ private:
         return cost > 0 ? cost : Infinity;
     }
 
+    /// @brief Finds split position with lowest SAH cost. Also returns the split cost and axis via pointer.
+    float findBestSplit(const Node& node, float& cost, int& axis) const {
+        cost = Infinity;
+        float position = 0;
+        // pick the axis with the highest bounding box length as split axis.
+        axis = node.aabb.diagonal().maxComponentIndex();
+
+        for (int i = 0; i < node.primitiveCount; i++) {
+            const float candidatePosition = getCentroid(m_primitiveIndices[node.leftFirst + i])[axis];
+            const float candidateCost = getSahCost(node, axis, candidatePosition);
+            if (candidateCost < cost) {
+                cost = candidateCost;
+                position = candidatePosition;
+            }
+        }
+
+        return position;
+    }
+
     /// @brief Attempts to subdivide a given BVH node.
     void subdivide(Node& parent) {
         // only subdivide if enough children are available
@@ -206,20 +225,10 @@ private:
 
         const NodeIndex firstPrimitive = parent.firstPrimitiveIndex();
 
-        // pick the axis with the highest bounding box length as split axis.
-        const int splitAxis = parent.aabb.diagonal().maxComponentIndex();
-
-        // compute split position based with lowest SAH cost
-        float splitCost = Infinity;
-        float splitPosition = 0;
-        for (int i = 0; i < parent.primitiveCount; i++) {
-            const float candidatePosition = getCentroid(m_primitiveIndices[parent.leftFirst + i])[splitAxis];
-            const float candidateCost = getSahCost(parent, splitAxis, candidatePosition);
-            if (candidateCost < splitCost) {
-                splitCost = candidateCost;
-                splitPosition = candidatePosition;
-            }
-        }
+        // find best split position
+        int splitAxis;
+        float splitCost;
+        const float splitPosition = findBestSplit(parent, splitCost, splitAxis);
 
         // abort subdivision if its resulting cost would be worse than unsplitted parent's cost
         const float parentCost = surfaceArea(parent.aabb) * parent.primitiveCount;
