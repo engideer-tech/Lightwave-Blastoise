@@ -43,7 +43,7 @@ public:
             }
 
             const BsdfSample bsdfSample = its.sampleBsdf(rng);
-            currentWeight = bsdfSample.weight;
+            currentWeight *= bsdfSample.weight;
             currentRay = {its.position, bsdfSample.wi.normalized()};
         }
 

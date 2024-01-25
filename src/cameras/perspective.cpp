@@ -26,7 +26,7 @@ public:
      * and the law of sines, given we know all the triangle's angles.
      */
     explicit Perspective(const Properties& properties) : Camera(properties) {
-        const float fov = properties.get<float>("fov", 90);
+        const float fov = properties.get<float>("fov", 90.0f);
         const std::string fovAxis = properties.get<std::string>("fovAxis", "x");
 
         const float p1x = 0.0f, p1y = 0.0f;
@@ -34,12 +34,12 @@ public:
         const float angle1 = (fov / 2) * degToRad;
 
         const float u = p2x - p1x, v = p2y - p1y;
-        const float a3 = sqrt(u * u + v * v);
+        const float a3 = sqrt(sqr(u) + sqr(v));
         const float angle3 = Pi - (angle1 + angle2);
         const float a2 = a3 * std::sin(angle2) / std::sin(angle3);
         const float RHS1 = p1x * u - p1y * v + a2 * a3 * std::cos(angle1);
         const float RHS2 = p2y * u - p2x * v - a2 * a3 * std::sin(angle1);
-        const float p3x = (1 / (a3 * a3)) * (u * RHS1 - v * RHS2);
+        const float p3x = (1 / sqr(a3)) * (u * RHS1 - v * RHS2);
 
         const float resolutionRatio = static_cast<float>(m_resolution.x()) / static_cast<float>(m_resolution.y());
         const float y3 = (fovAxis == "x") != (m_resolution.x() < m_resolution.y()) ? // XOR
@@ -55,14 +55,15 @@ public:
     }
 
     CameraSample sample(const Point2& normalized, Sampler& rng) const override {
-        const Vector directionInCameraSystem = Vector(normalized.x() * xScalar,
-                                                      normalized.y() * yScalar,
-                                                      1.0f);
+        const Vector directionInCameraSystem = {
+                normalized.x() * xScalar,
+                normalized.y() * yScalar,
+                1.0f
+        };
 
-        return CameraSample{
-                .ray = Ray(m_transform->apply(Point(0.0f, 0.0f, 0.0f)),
-                           m_transform->apply(directionInCameraSystem).normalized()
-                ),
+        return {
+                .ray = Ray(m_transform->apply(Point(0.0f)),
+                           m_transform->apply(directionInCameraSystem).normalized()),
                 .weight = Color(1.0f)
         };
     }
