@@ -205,7 +205,7 @@ private:
     struct SplitParameters {
         short axis = 0;
         float cost = Infinity;
-        float position = 0;
+        float position = 0.0f;
     };
 
     /**
@@ -220,61 +220,61 @@ private:
      * @see https://jacco.ompf2.com/2022/04/21/how-to-build-a-bvh-part-3-quick-builds/
      */
     SplitParameters findBestSplit(const Node& node) const {
-        float cost = Infinity;
-        float position = 0;
-        // Pick the axis with the highest bounding box length as split axis
-        short axis = node.aabb.diagonal().maxComponentIndex();
+        SplitParameters result = {};
 
-        // Use bounds defined by outermost centroids. This reduces the effective node AABB size.
-        const auto [minBound, maxBound] = getBoundingPoints(node, axis);
-        if (minBound == maxBound) {
-            return {};
-        }
+        for (short axis = 0; axis < 3; axis++) {
+            // Use bounds defined by outermost centroids. This reduces the effective node AABB size.
+            const auto [minBound, maxBound] = getBoundingPoints(node, axis);
+            if (minBound == maxBound) {
+                return {};
+            }
 
-        // Populate the bins
-        std::array<Bin, BIN_NUM> bins;
-        const float scale = BIN_NUM / (maxBound - minBound); // inverse of bin size
+            // Populate the bins
+            std::array<Bin, BIN_NUM> bins;
+            const float scale = BIN_NUM / (maxBound - minBound); // inverse of bin size
 
-        for (int i = 0; i < node.primitiveCount; i++) {
-            const int primitiveIndex = m_primitiveIndices[node.leftFirst + i];
-            const float primitiveCenter = getCentroid(primitiveIndex)[axis];
-            const int binIndex = std::min(BIN_NUM - 1, static_cast<int>((primitiveCenter - minBound) * scale));
-            bins[binIndex].primitiveCount++;
-            bins[binIndex].aabb.extend(getBoundingBox(primitiveIndex));
-        }
+            for (int i = 0; i < node.primitiveCount; i++) {
+                const int primitiveIndex = m_primitiveIndices[node.leftFirst + i];
+                const float primitiveCenter = getCentroid(primitiveIndex)[axis];
+                const int binIndex = std::min(BIN_NUM - 1, static_cast<int>((primitiveCenter - minBound) * scale));
+                bins[binIndex].primitiveCount++;
+                bins[binIndex].aabb.extend(getBoundingBox(primitiveIndex));
+            }
 
-        // Sum up the left and right areas and primitive counts for all split positions
-        std::array<float, BIN_NUM - 1> leftAreas{}, rightAreas{};
-        std::array<int, BIN_NUM - 1> leftCounts{}, rightCounts{};
+            // Sum up the left and right areas and primitive counts for all split positions
+            std::array<float, BIN_NUM - 1> leftAreas{}, rightAreas{};
+            std::array<int, BIN_NUM - 1> leftCounts{}, rightCounts{};
 
-        Bounds leftBoundTotal, rightBoundTotal;
-        int leftCountTotal = 0, rightCountTotal = 0;
+            Bounds leftBoundTotal, rightBoundTotal;
+            int leftCountTotal = 0, rightCountTotal = 0;
 
-        for (int i = 0; i < BIN_NUM - 1; i++) {
-            leftCountTotal += bins[i].primitiveCount;
-            leftCounts[i] = leftCountTotal;
+            for (int i = 0; i < BIN_NUM - 1; i++) {
+                leftCountTotal += bins[i].primitiveCount;
+                leftCounts[i] = leftCountTotal;
 
-            leftBoundTotal.extend(bins[i].aabb);
-            leftAreas[i] = surfaceArea(leftBoundTotal);
+                leftBoundTotal.extend(bins[i].aabb);
+                leftAreas[i] = surfaceArea(leftBoundTotal);
 
-            rightCountTotal += bins[BIN_NUM - 1 - i].primitiveCount;
-            rightCounts[BIN_NUM - 2 - i] = rightCountTotal; // -1 to get index & -1 cause array is one smaller => -2
+                rightCountTotal += bins[BIN_NUM - 1 - i].primitiveCount;
+                rightCounts[BIN_NUM - 2 - i] = rightCountTotal; // -1 to get index & -1 cause array is one smaller => -2
 
-            rightBoundTotal.extend(bins[BIN_NUM - 1 - i].aabb);
-            rightAreas[BIN_NUM - 2 - i] = surfaceArea(rightBoundTotal);
-        }
+                rightBoundTotal.extend(bins[BIN_NUM - 1 - i].aabb);
+                rightAreas[BIN_NUM - 2 - i] = surfaceArea(rightBoundTotal);
+            }
 
-        // Calculate SAH cost for all split positions
-        const float binSize = (maxBound - minBound) / BIN_NUM;
-        for (int i = 0; i < BIN_NUM - 1; i++) {
-            const float candidateCost = leftCounts[i] * leftAreas[i] + rightCounts[i] * rightAreas[i];
-            if (candidateCost < cost) {
-                cost = candidateCost;
-                position = minBound + binSize * (i + 1);
+            // Calculate SAH cost for all split positions
+            const float binSize = (maxBound - minBound) / BIN_NUM;
+            for (int i = 0; i < BIN_NUM - 1; i++) {
+                const float candidateCost = leftCounts[i] * leftAreas[i] + rightCounts[i] * rightAreas[i];
+                if (candidateCost < result.cost) {
+                    result.axis = axis;
+                    result.cost = candidateCost;
+                    result.position = minBound + binSize * (i + 1);
+                }
             }
         }
 
-        return {axis, cost, position};
+        return result;
     }
 
     /// @brief Attempts to subdivide a given BVH node.
