@@ -30,9 +30,10 @@ namespace lightwave {
  */
 class AccelerationStructure : public Shape {
 private:
-    /// @brief The datatype used to index BVH nodes and the primitive index
-    /// remapping.
+    /// @brief The datatype used to index BVH nodes and the primitive index remapping.
     typedef int32_t NodeIndex;
+    /// @brief The number of bins to use when computing an optimal SAH split.
+    static constexpr int BIN_NUM = 16;
 
     /// @brief A node in our binary BVH tree.
     struct Node {
@@ -72,6 +73,11 @@ private:
         NodeIndex lastPrimitiveIndex() const {
             return leftFirst + primitiveCount - 1;
         }
+    };
+
+    struct Bin {
+        Bounds aabb;
+        NodeIndex primitiveCount = 0;
     };
 
     /// @brief A list of all BVH nodes.
@@ -174,42 +180,70 @@ private:
         return 2 * (size.x() * size.y() + size.x() * size.z() + size.y() * size.z());
     }
 
-    /// @brief Computes SAH cost for given split axis and position
-    float getSahCost(const Node& node, const int splitAxis, const float splitPosition) const {
-        Bounds leftBox, rightBox;
-        int leftCount = 0, rightCount = 0;
-
-        for (int i = 0; i < node.primitiveCount; i++) {
-            const int primitiveIndex = m_primitiveIndices[node.leftFirst + i];
-            const Bounds primitiveBounds = getBoundingBox(primitiveIndex);
-            const float primitivePosition = getCentroid(primitiveIndex)[splitAxis];
-
-            if (primitivePosition < splitPosition) {
-                leftCount++;
-                leftBox.extend(primitiveBounds);
-            } else {
-                rightCount++;
-                rightBox.extend(primitiveBounds);
-            }
-        }
-
-        const float cost = leftCount * surfaceArea(leftBox) + rightCount * surfaceArea(rightBox);
-        return cost > 0 ? cost : Infinity;
-    }
-
     /// @brief Finds split position with lowest SAH cost. Also returns the split cost and axis via pointer.
     float findBestSplit(const Node& node, float& cost, int& axis) const {
         cost = Infinity;
         float position = 0;
-        // pick the axis with the highest bounding box length as split axis.
+        // Pick the axis with the highest bounding box length as split axis
         axis = node.aabb.diagonal().maxComponentIndex();
 
+        // Find bounds for node aligned with centroids of primitives. This reduces the effective parent aabb size.
+        float minBound = Infinity;
+        float maxBound = -Infinity;
         for (int i = 0; i < node.primitiveCount; i++) {
-            const float candidatePosition = getCentroid(m_primitiveIndices[node.leftFirst + i])[axis];
-            const float candidateCost = getSahCost(node, axis, candidatePosition);
+            const int primitiveIndex = m_primitiveIndices[node.leftFirst + i];
+            const float primitiveCenter = getCentroid(primitiveIndex)[axis];
+            if (primitiveCenter < minBound) minBound = primitiveCenter;
+            if (primitiveCenter > maxBound) maxBound = primitiveCenter;
+        }
+        if (minBound == maxBound) {
+            return -1.0f;
+        }
+
+        // Populate the bins
+        std::array<Bin, BIN_NUM> bins;
+        const float scale = BIN_NUM / (maxBound - minBound); // inverse of bin size
+
+        for (int i = 0; i < node.primitiveCount; i++) {
+            const int primitiveIndex = m_primitiveIndices[node.leftFirst + i];
+            const float primitiveCenter = getCentroid(primitiveIndex)[axis];
+            const int binIndex = std::min(BIN_NUM - 1, static_cast<int>((primitiveCenter - minBound) * scale));
+            bins[binIndex].primitiveCount++;
+            bins[binIndex].aabb.extend(getBoundingBox(primitiveIndex));
+        }
+
+        // Sum up the left and right areas and primitive counts for all split positions
+        std::array<float, BIN_NUM - 1> leftAreas{};
+        std::array<float, BIN_NUM - 1> rightAreas{};
+        std::array<int, BIN_NUM - 1> leftCounts{};
+        std::array<int, BIN_NUM - 1> rightCounts{};
+
+        Bounds leftBoundTotal;
+        Bounds rightBoundTotal;
+        int leftCountTotal = 0;
+        int rightCountTotal = 0;
+
+        for (int i = 0; i < BIN_NUM - 1; i++) {
+            leftCountTotal += bins[i].primitiveCount;
+            leftCounts[i] = leftCountTotal;
+
+            leftBoundTotal.extend(bins[i].aabb);
+            leftAreas[i] = surfaceArea(leftBoundTotal);
+
+            rightCountTotal += bins[BIN_NUM - 1 - i].primitiveCount;
+            rightCounts[BIN_NUM - 2 - i] = rightCountTotal; // -1 to get index & -1 cause array is one smaller => -2
+
+            rightBoundTotal.extend(bins[BIN_NUM - 1 - i].aabb);
+            rightAreas[BIN_NUM - 2 - i] = surfaceArea(rightBoundTotal);
+        }
+
+        // Calculate SAH cost for all split positions
+        const float binSize = (maxBound - minBound) / BIN_NUM;
+        for (int i = 0; i < BIN_NUM - 1; i++) {
+            const float candidateCost = leftCounts[i] * leftAreas[i] + rightCounts[i] * rightAreas[i];
             if (candidateCost < cost) {
                 cost = candidateCost;
-                position = candidatePosition;
+                position = minBound + binSize * (i + 1);
             }
         }
 
