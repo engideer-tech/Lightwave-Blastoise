@@ -77,4 +77,3 @@ public:
 } // namespace lightwave
 
 REGISTER_INTEGRATOR(DirectIntegrator, "direct")
-
