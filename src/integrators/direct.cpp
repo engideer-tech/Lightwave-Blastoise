@@ -28,6 +28,9 @@ public:
         }
 
         // Next-event estimation (shadow ray + lighting data collection)
+        // when implementing area lights, you need not just the pdf for selecting that light (which is in degree units)
+        // as well as the pdf for selecting that point on the area light (which is in area units). Thus, we will need
+        // to convert the area pdf to a degree pdf one. See photo gallery for how to do that.
         if (m_scene->hasLights()) {
             const LightSample sampleLight = m_scene->sampleLight(rng);
             if (!sampleLight.light->canBeIntersected()) {

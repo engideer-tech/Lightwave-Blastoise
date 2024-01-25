@@ -75,6 +75,8 @@ private:
         }
     };
 
+    /// @brief Represents one SAH bin. That is, a grouping of those primitives
+    /// of which the centroid points are within some slice of the parent AABB.
     struct Bin {
         Bounds aabb;
         NodeIndex primitiveCount = 0;
@@ -180,24 +182,53 @@ private:
         return 2 * (size.x() * size.y() + size.x() * size.z() + size.y() * size.z());
     }
 
-    /// @brief Finds split position with lowest SAH cost. Also returns the split cost and axis via pointer.
-    float findBestSplit(const Node& node, float& cost, int& axis) const {
-        cost = Infinity;
-        float position = 0;
-        // Pick the axis with the highest bounding box length as split axis
-        axis = node.aabb.diagonal().maxComponentIndex();
+    /// @see getBoundingPoints
+    struct BoundingPoints {
+        float minBound, maxBound;
+    };
 
-        // Find bounds for node aligned with centroids of primitives. This reduces the effective parent aabb size.
+    /// @brief Finds the two outermost centroids of the primitives of the given node, along the given axis.
+    BoundingPoints getBoundingPoints(const Node& node, const short axis) const {
         float minBound = Infinity;
         float maxBound = -Infinity;
+
         for (int i = 0; i < node.primitiveCount; i++) {
             const int primitiveIndex = m_primitiveIndices[node.leftFirst + i];
             const float primitiveCenter = getCentroid(primitiveIndex)[axis];
             if (primitiveCenter < minBound) minBound = primitiveCenter;
             if (primitiveCenter > maxBound) maxBound = primitiveCenter;
         }
+
+        return {minBound, maxBound};
+    }
+
+    struct SplitParameters {
+        short axis = 0;
+        float cost = Infinity;
+        float position = 0;
+    };
+
+    /**
+     * Attempts to find the best split plane utilizing a binned SAH algorithm. For this, we define
+     * @code splitPlaneCost = primCountLeft * aabbSurfaceAreaLeft + primCountRight * aabbSurfaceAreaRight @endcode
+     * To find the split plane with the lowest cost, we subdivide the parent AABB into N bins along some axis.
+     * We then evaluate the SAH cost at each of the N-1 split planes.
+     * To avoid looping over all primitives for every split, we group the primitives into the bins based on their
+     * centroids and calculate left and right totals for all splits.
+     * @param node node to be split up
+     * @return best split axis, cost, and position
+     * @see https://jacco.ompf2.com/2022/04/21/how-to-build-a-bvh-part-3-quick-builds/
+     */
+    SplitParameters findBestSplit(const Node& node) const {
+        float cost = Infinity;
+        float position = 0;
+        // Pick the axis with the highest bounding box length as split axis
+        short axis = node.aabb.diagonal().maxComponentIndex();
+
+        // Use bounds defined by outermost centroids. This reduces the effective node AABB size.
+        const auto [minBound, maxBound] = getBoundingPoints(node, axis);
         if (minBound == maxBound) {
-            return -1.0f;
+            return {};
         }
 
         // Populate the bins
@@ -213,15 +244,11 @@ private:
         }
 
         // Sum up the left and right areas and primitive counts for all split positions
-        std::array<float, BIN_NUM - 1> leftAreas{};
-        std::array<float, BIN_NUM - 1> rightAreas{};
-        std::array<int, BIN_NUM - 1> leftCounts{};
-        std::array<int, BIN_NUM - 1> rightCounts{};
+        std::array<float, BIN_NUM - 1> leftAreas{}, rightAreas{};
+        std::array<int, BIN_NUM - 1> leftCounts{}, rightCounts{};
 
-        Bounds leftBoundTotal;
-        Bounds rightBoundTotal;
-        int leftCountTotal = 0;
-        int rightCountTotal = 0;
+        Bounds leftBoundTotal, rightBoundTotal;
+        int leftCountTotal = 0, rightCountTotal = 0;
 
         for (int i = 0; i < BIN_NUM - 1; i++) {
             leftCountTotal += bins[i].primitiveCount;
@@ -247,7 +274,7 @@ private:
             }
         }
 
-        return position;
+        return {axis, cost, position};
     }
 
     /// @brief Attempts to subdivide a given BVH node.
@@ -257,12 +284,7 @@ private:
             return;
         }
 
-        const NodeIndex firstPrimitive = parent.firstPrimitiveIndex();
-
-        // find best split position
-        int splitAxis;
-        float splitCost;
-        const float splitPosition = findBestSplit(parent, splitCost, splitAxis);
+        const auto [splitAxis, splitCost, splitPosition] = findBestSplit(parent);
 
         // abort subdivision if its resulting cost would be worse than unsplitted parent's cost
         const float parentCost = surfaceArea(parent.aabb) * parent.primitiveCount;
@@ -275,6 +297,7 @@ private:
         // partition algorithm (similar to quicksort)
         // the primitives must be re-ordered so that all children of the left node will have a smaller index than
         // firstRightIndex, and nodes on the right will have an index larger or equal to firstRightIndex
+        const NodeIndex firstPrimitive = parent.firstPrimitiveIndex();
         NodeIndex firstRightIndex = firstPrimitive;
         NodeIndex lastLeftIndex = parent.lastPrimitiveIndex();
         while (firstRightIndex <= lastLeftIndex) {
