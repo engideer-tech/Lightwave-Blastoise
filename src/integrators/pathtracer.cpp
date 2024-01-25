@@ -22,18 +22,18 @@ public:
                 return result + m_scene->evaluateBackground(currentRay.direction).value * currentWeight;
             }
 
-            // Next-event estimation (shadow ray + lighting data collection)
-            // when implementing area lights, you need not just the pdf for selecting that light (which is in degree units)
-            // as well as the pdf for selecting that point on the area light (which is in area units). Thus, we will need
-            // to convert the area pdf to a degree pdf one. See photo gallery for how to do that.
+            // Next-event estimation (shadow ray towards random non-intersectable light)
             if (m_scene->hasLights()) {
-                const LightSample sampleLight = m_scene->sampleLight(rng);
-                if (!sampleLight.light->canBeIntersected()) {
-                    const DirectLightSample sampleLightData = sampleLight.light->sampleDirect(its.position, rng);
-                    const Ray shadowRay = {its.position, sampleLightData.wi.normalized()};
-                    if (!m_scene->intersect(shadowRay, sampleLightData.distance, rng)) {
-                        const BsdfEval bsdfEval = its.evaluateBsdf(sampleLightData.wi.normalized());
-                        result += (sampleLightData.weight / sampleLight.probability) * bsdfEval.value;
+                const LightSample sampledLight = m_scene->sampleLight(rng);
+
+                if (!sampledLight.light->canBeIntersected()) {
+                    const DirectLightSample sampledLightPoint = sampledLight.light->sampleDirect(its.position, rng);
+                    const Vector sampledLightWi = sampledLightPoint.wi.normalized();
+                    const Ray shadowRay = {its.position, sampledLightWi};
+
+                    if (!m_scene->intersect(shadowRay, sampledLightPoint.distance, rng)) {
+                        const BsdfEval bsdfEval = its.evaluateBsdf(sampledLightWi);
+                        result += sampledLightPoint.weight * bsdfEval.value * currentWeight / sampledLight.probability;
                     }
                 }
             }
