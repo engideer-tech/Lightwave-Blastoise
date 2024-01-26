@@ -65,6 +65,6 @@ public:
     }
 };
 
-}
+} // namespace lightwave
 
 REGISTER_CAMERA(Perspective, "perspective")
