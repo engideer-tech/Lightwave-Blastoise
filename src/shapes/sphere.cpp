@@ -75,12 +75,10 @@ public:
     }
 
     AreaSample sampleArea(Sampler& rng) const override {
-        const Point2 random = rng.next2D();
-        const Point position = {2.0f * Pi * random.x(), Pi * random.y()};
+        const Point position = squareToUniformSphere(rng.next2D());
 
         AreaSample sample;
-        // TODO: position
-        setSurfaceEventData(sample, {});
+        setSurfaceEventData(sample, position);
         return sample;
     }
 

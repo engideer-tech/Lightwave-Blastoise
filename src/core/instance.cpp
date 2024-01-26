@@ -13,12 +13,17 @@ void Instance::transformFrame(SurfaceEvent& surf) const {
     }
 
     surf.position = m_transform->apply(surf.position);
-    surf.frame.tangent = m_transform->apply(surf.frame.tangent).normalized();
-    surf.frame.bitangent = m_transform->apply(surf.frame.bitangent).normalized();
+    surf.frame.tangent = m_transform->apply(surf.frame.tangent);
+    surf.frame.bitangent = m_transform->apply(surf.frame.bitangent);
+
+    surf.pdf *= surf.frame.tangent.cross(surf.frame.bitangent).length();
+
     if (m_flipNormal) {
         surf.frame.bitangent *= -1.0f;
     }
 
+    surf.frame.tangent = surf.frame.tangent.normalized();
+    surf.frame.bitangent = surf.frame.bitangent.normalized();
     surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent).normalized();
     surf.frame.bitangent = surf.frame.normal.cross(surf.frame.tangent).normalized();
 }
