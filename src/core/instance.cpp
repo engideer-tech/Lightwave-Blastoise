@@ -12,11 +12,13 @@ void Instance::transformFrame(SurfaceEvent& surf) const {
         return;
     }
 
+    const float oldCrossProduct = surf.frame.tangent.cross(surf.frame.bitangent).length();
     surf.position = m_transform->apply(surf.position);
     surf.frame.tangent = m_transform->apply(surf.frame.tangent);
     surf.frame.bitangent = m_transform->apply(surf.frame.bitangent);
+    const float newCrossProduct = surf.frame.tangent.cross(surf.frame.bitangent).length();
 
-    surf.pdf *= surf.frame.tangent.cross(surf.frame.bitangent).length();
+    surf.pdf *= oldCrossProduct / newCrossProduct;
 
     if (m_flipNormal) {
         surf.frame.bitangent *= -1.0f;
