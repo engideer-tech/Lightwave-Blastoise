@@ -6,6 +6,7 @@ namespace lightwave {
  * the scene, which allows to abstract the scene into a single point located at its center.
  */
 class EnvironmentMap final : public BackgroundLight {
+private:
     /// @brief The texture to use as background
     ref<Texture> m_texture;
 

@@ -10,9 +10,9 @@ class Rectangle : public Shape {
      * @param surf The surface event to populate with texture coordinates, shading frame and area pdf
      * @param position The hitpoint (i.e., point in [-1,-1,0] to [+1,+1,0]), found via intersection or area sampling
      */
-    inline void populate(SurfaceEvent &surf, const Point &position) const {
+    inline void populate(SurfaceEvent& surf, const Point& position) const {
         surf.position = position;
-        
+
         // map the position from [-1,-1,0]..[+1,+1,0] to [0,0]..[1,1] by discarding the z component and rescaling
         surf.uv.x() = (position.x() + 1) / 2;
         surf.uv.y() = (position.y() + 1) / 2;
@@ -29,15 +29,14 @@ class Rectangle : public Shape {
     }
 
 public:
-    Rectangle(const Properties &properties) {
-    }
+    explicit Rectangle(const Properties& properties) {}
 
-    bool intersect(const Ray &ray, Intersection &its, Sampler &rng) const override {
+    bool intersect(const Ray& ray, Intersection& its, Sampler& rng) const override {
         // if the ray travels in the xy-plane, we report no intersection
         // (we ignore the edge case - pun intended - that the ray might have infinite intersections with the rectangle)
         if (ray.direction.z() == 0)
             return false;
-        
+
         // ray.origin.z + t * ray.direction.z = 0
         // <=> t = -ray.origin.z / ray.direction.z
         const float t = -ray.origin.z() / ray.direction.z();
@@ -46,7 +45,7 @@ public:
         // we also do not update the intersection if a closer intersection already exists (i.e., its.t is lower than our own t)
         if (t < Epsilon || t > its.t)
             return false;
-        
+
         // compute the hitpoint
         const Point position = ray(t);
         // we have intersected an infinite plane at z=0; now dismiss anything outside of the [-1,-1,0]..[+1,+1,0] domain.
@@ -60,16 +59,16 @@ public:
     }
 
     Bounds getBoundingBox() const override {
-        return Bounds(Point { -1, -1, 0 }, Point { +1, +1, 0 });
+        return {Point{-1, -1, 0}, Point{+1, +1, 0}};
     }
 
     Point getCentroid() const override {
         return Point(0);
     }
 
-    AreaSample sampleArea(Sampler &rng) const override {
+    AreaSample sampleArea(Sampler& rng) const override {
         Point2 rnd = rng.next2D(); // sample a random point in [0,0]..[1,1]
-        Point position { 2 * rnd.x() - 1, 2 * rnd.y() - 1, 0 }; // stretch the random point to [-1,-1]..[+1,+1] and set z=0
+        Point position{2 * rnd.x() - 1, 2 * rnd.y() - 1, 0}; // stretch the random point to [-1,-1]..[+1,+1] and set z=0
 
         AreaSample sample;
         populate(sample, position); // compute the shading frame, texture coordinates and area pdf (same as intersection)

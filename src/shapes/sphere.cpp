@@ -12,15 +12,16 @@ private:
      * @param position intersection or area sample position on the object's surface
      */
     inline static void setSurfaceEventData(SurfaceEvent& surf, const Point& position) {
-        surf.position = Vector(position).normalized();
-
         const Vector normal = Vector(position).normalized();
+
+        surf.position = normal; // normalizing ensures the point is on the surface of the sphere
         surf.frame = Frame(normal);
 
         surf.uv.x() = atan2f(normal.x(), normal.z()) / (2.0f * Pi) + 0.5f;
         surf.uv.y() = (acosf(normal.y()) / Pi) + 0.5f;
 
-        surf.pdf = 0.0f; // TODO
+        // since we sample the area uniformly, the pdf is given by 1/surfaceArea
+        surf.pdf = Inv4Pi;
     }
 
 public:
@@ -42,7 +43,7 @@ public:
         if (dSquared > 1) { // if longer than radius then no intersection
             return false;
         }
-        const float thc = std::sqrt(1 - dSquared); // pythagoras; thc = vector from intersection to middle point
+        const float thc = std::sqrt(1.0f - dSquared); // pythagoras; thc = vector from intersection to middle point
         float t0 = tca - thc;
         float t1 = tca + thc;
 
@@ -81,5 +82,7 @@ public:
         return "Sphere[]";
     }
 };
-}
+
+} // namespace lightwave
+
 REGISTER_SHAPE(Sphere, "sphere")
