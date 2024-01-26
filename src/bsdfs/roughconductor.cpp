@@ -41,7 +41,7 @@ public:
         const float alpha = std::max(1e-3f, sqr(m_roughness->scalar(uv)));
 
         const Vector normal = microfacet::sampleGGXVNDF(alpha, wo, rng.next2D()).normalized();
-        const Vector wi = reflect(wo, normal);
+        const Vector wi = reflect(wo, normal).normalized();
         const Color R = m_reflectance->evaluate(uv);
         const float G_wi = microfacet::smithG1(alpha, normal, wi);
 

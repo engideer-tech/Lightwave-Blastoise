@@ -61,11 +61,11 @@ public:
         const float reflectProbability = fresnelDielectric(wo.z(), eta);
         if (rng.next() < reflectProbability) {
             // reflect
-            wi = reflect(wo, normal);
+            wi = reflect(wo, normal).normalized();
             weight = m_reflectance->evaluate(uv);
         } else {
             // refract
-            wi = refract(wo, normal, eta);
+            wi = refract(wo, normal, eta).normalized();
             // The reason to divide by eta squared when refracting, is because refraction changes our solid angles.
             // That is, the angle between two wi's will be different after refraction.
             weight = m_transmittance->evaluate(uv) / sqr(eta);

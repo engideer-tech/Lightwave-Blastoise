@@ -28,7 +28,7 @@ public:
      * Since conductor reflections are fully deterministic, rng isn't needed.
      */
     BsdfSample sample(const Point2& uv, const Vector& wo, Sampler& rng) const override {
-        const Vector wi = reflect(wo, m_normal);
+        const Vector wi = reflect(wo, m_normal).normalized();
         const Color reflectance = m_reflectance->evaluate(uv);
 
         return {wi, reflectance};

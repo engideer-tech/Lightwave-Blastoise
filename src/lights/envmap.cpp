@@ -37,7 +37,7 @@ public:
     }
 
     DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {
-        Vector direction = squareToUniformSphere(rng.next2D());
+        Vector direction = squareToUniformSphere(rng.next2D()).normalized();
         auto E = evaluate(direction);
 
         // implement better importance sampling here, if you ever need it

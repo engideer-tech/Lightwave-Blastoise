@@ -43,11 +43,10 @@ public:
                 const DirectLightSample sampledLightPoint = sampledLight.light->sampleDirect(its.position, rng);
 
                 if (!sampledLight.light->canBeIntersected() && !sampledLightPoint.isInvalid()) {
-                    const Vector sampledLightWi = sampledLightPoint.wi.normalized();
-                    const Ray shadowRay = {its.position, sampledLightWi};
+                    const Ray shadowRay = {its.position, sampledLightPoint.wi};
 
                     if (!m_scene->intersect(shadowRay, sampledLightPoint.distance, rng)) {
-                        const BsdfEval bsdfEval = its.evaluateBsdf(sampledLightWi);
+                        const BsdfEval bsdfEval = its.evaluateBsdf(sampledLightPoint.wi);
                         result += sampledLightPoint.weight * bsdfEval.value * currentWeight / sampledLight.probability;
                     }
                 }
@@ -55,7 +54,7 @@ public:
 
             // Preparation for next bounce
             currentWeight *= bsdfSample.weight;
-            currentRay = {its.position, bsdfSample.wi.normalized()};
+            currentRay = {its.position, bsdfSample.wi};
         }
 
         return result;
