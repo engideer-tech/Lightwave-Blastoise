@@ -75,7 +75,13 @@ public:
     }
 
     AreaSample sampleArea(Sampler& rng) const override {
-        NOT_IMPLEMENTED
+        const Point2 random = rng.next2D();
+        const Point position = {2.0f * Pi * random.x(), Pi * random.y()};
+
+        AreaSample sample;
+        // TODO: position
+        setSurfaceEventData(sample, {});
+        return sample;
     }
 
     std::string toString() const override {
