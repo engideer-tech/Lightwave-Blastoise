@@ -22,12 +22,27 @@ public:
                 return result + m_scene->evaluateBackground(currentRay.direction).value * currentWeight;
             }
 
+            if (its.instance->emission() != nullptr) {
+                result += its.evaluateEmission() * currentWeight;
+            }
+
+            // Don't evaluate NEE on last bounce
+            if (depth == m_maxDepth - 1) {
+                return result;
+            }
+
+            const BsdfSample bsdfSample = its.sampleBsdf(rng);
+            // Terminate on invalid sample
+            if (bsdfSample.isInvalid()) {
+                return result;
+            }
+
             // Next-event estimation (shadow ray towards random non-intersectable light)
             if (m_scene->hasLights()) {
                 const LightSample sampledLight = m_scene->sampleLight(rng);
+                const DirectLightSample sampledLightPoint = sampledLight.light->sampleDirect(its.position, rng);
 
-                if (!sampledLight.light->canBeIntersected()) {
-                    const DirectLightSample sampledLightPoint = sampledLight.light->sampleDirect(its.position, rng);
+                if (!sampledLight.light->canBeIntersected() && !sampledLightPoint.isInvalid()) {
                     const Vector sampledLightWi = sampledLightPoint.wi.normalized();
                     const Ray shadowRay = {its.position, sampledLightWi};
 
@@ -38,11 +53,7 @@ public:
                 }
             }
 
-            if (its.instance->emission() != nullptr) {
-                result += its.evaluateEmission() * currentWeight;
-            }
-
-            const BsdfSample bsdfSample = its.sampleBsdf(rng);
+            // Preparation for next bounce
             currentWeight *= bsdfSample.weight;
             currentRay = {its.position, bsdfSample.wi.normalized()};
         }
