@@ -85,7 +85,6 @@ protected:
         its.frame = Frame(normal);
 
         its.uv = interpolatedVertex.texcoords;
-        its.pdf = 0.0f; // TODO
 
         return true;
     }

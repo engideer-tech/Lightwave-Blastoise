@@ -13,18 +13,21 @@ public:
 
     DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {
         const AreaSample sample = m_instance->sampleArea(rng);
-        const Vector wi = sample.position - origin;
+
+        Vector wi = sample.position - origin;
         const float distanceSquared = wi.lengthSquared();
         const float distance = std::sqrt(distanceSquared);
+        wi = wi.normalized();
 
         if (m_instance->emission() == nullptr) {
-            return {wi.normalized(), Color::black(), distance};
+            return {wi, Color::black(), distance};
         }
 
-        const Color emission = m_instance->emission()->evaluate(sample.uv, sample.frame.toLocal(wi)).value
-                               / (distanceSquared * sample.pdf);
+        const float cosTheta = abs(sample.frame.normal.dot(wi));
+        const Color emission = m_instance->emission()->evaluate(sample.uv, sample.frame.toLocal(-wi)).value
+                               * cosTheta / (sample.pdf * distanceSquared);
 
-        return {wi.normalized(), emission, distance};
+        return {wi, emission, distance};
     }
 
     bool canBeIntersected() const override {
