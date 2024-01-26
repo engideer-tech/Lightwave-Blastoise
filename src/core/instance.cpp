@@ -18,6 +18,9 @@ void Instance::transformFrame(SurfaceEvent& surf) const {
     surf.frame.bitangent = m_transform->apply(surf.frame.bitangent);
     const float newCrossProduct = surf.frame.tangent.cross(surf.frame.bitangent).length();
 
+    // Since the probability of sampling a certain point on an object relates to its surface area, we must scale the
+    // pdf proportionally to the scaling of surfaces (not volumes!) by the transformation. Since a cross product
+    // computes a surface area, it's a good fit for this.
     surf.pdf *= oldCrossProduct / newCrossProduct;
 
     if (m_flipNormal) {

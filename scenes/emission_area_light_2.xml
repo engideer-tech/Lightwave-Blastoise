@@ -60,6 +60,6 @@
             </transform>
         </instance>
     </scene>
-    <image id="emission_area_light"/>
+    <image id="emission_area_light_2"/>
     <sampler type="independent" count="64"/>
 </integrator>
