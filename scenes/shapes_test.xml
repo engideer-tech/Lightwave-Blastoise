@@ -1,0 +1,21 @@
+<integrator type="normals">
+    <scene>
+        <camera type="perspective" id="camera">
+            <integer name="width" value="512"/>
+            <integer name="height" value="512"/>
+
+            <string name="fovAxis" value="x"/>
+            <float name="fov" value="90"/>
+
+            <transform>
+                <translate x="1" z="-2.5"/>
+            </transform>
+        </camera>
+
+        <instance>
+            <shape type="sphere"/>
+        </instance>
+    </scene>
+    <image id="shapes_test"/>
+    <sampler type="independent" count="16"/>
+</integrator>

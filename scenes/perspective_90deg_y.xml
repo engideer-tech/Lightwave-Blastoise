@@ -1,0 +1,15 @@
+<integrator type="camera">
+    <scene>
+        <camera type="perspective" id="camera">
+            <integer name="width" value="400"/>
+            <integer name="height" value="300"/>
+
+            <string name="fovAxis" value="x"/>
+            <float name="fov" value="90"/>
+
+            <transform/>
+        </camera>
+    </scene>
+    <image id="perspective_90deg_y"/>
+    <sampler type="independent" count="16"/>
+</integrator>

@@ -11,6 +11,6 @@ __pycache__
 /cmake-build-release
 /build*
 /out
-/scenes
+/scenes/*.exr
 
 .DS_Store
