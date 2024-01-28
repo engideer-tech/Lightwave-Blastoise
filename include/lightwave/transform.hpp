@@ -24,6 +24,7 @@ public:
     Transform() {}
     Transform(const Properties &) {}
 
+    /// @brief Transforms the given vector using the matrix adjoint (transpose of the inverse).
     Vector applyNormal(const Vector& normal) const {
         const Vector4 result = m_inverse.transpose() * Vector4(normal, 1);
         return {result.x(), result.y(), result.z()};

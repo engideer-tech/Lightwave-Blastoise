@@ -6,17 +6,20 @@
 namespace lightwave {
 /**
  * Transforms the position and frame of the SurfaceEvent from object to world coordinates.
+ * If the instance has a normal map, we first use it to compute the new Frame normal, and apply the transformation
+ * afterwards.
  */
 void Instance::transformFrame(SurfaceEvent& surf) const {
     if (m_normal) {
-        // logger(EInfo, "normal %s tangent %s bitangent %s", surf.frame.normal, surf.frame.tangent, surf.frame.bitangent);
         const Color textureNormalRgb = m_normal->evaluate(surf.uv);
+        // Remap normal from [0, 1] to [-1, 1]
         const Vector textureNormal = {
                 textureNormalRgb.r() * 2.0f - 1.0f,
                 textureNormalRgb.g() * 2.0f - 1.0f,
                 textureNormalRgb.b() * 2.0f - 1.0f
         };
 
+        // Compute new normal
         const Vector newNormal = textureNormal.x() * surf.frame.tangent
                                  + textureNormal.y() * surf.frame.bitangent
                                  + textureNormal.z() * surf.frame.normal;
@@ -27,6 +30,8 @@ void Instance::transformFrame(SurfaceEvent& surf) const {
         }
 
         const float oldCrossProduct = surf.frame.tangent.cross(surf.frame.bitangent).length();
+        // When utilizing a normal map, use a matrix adjoint to transform the normal, and then simply recompute the
+        // tangent and bitangent using the Frame constructor
         surf.frame = Frame(m_transform->applyNormal(newNormal).normalized());
         const float newCrossProduct = surf.frame.tangent.cross(surf.frame.bitangent).length();
 
@@ -34,6 +39,7 @@ void Instance::transformFrame(SurfaceEvent& surf) const {
 
         surf.frame.tangent = surf.frame.tangent.normalized();
         surf.frame.bitangent = surf.frame.bitangent.normalized();
+        surf.position = m_transform->apply(surf.position);
 
         return;
     }

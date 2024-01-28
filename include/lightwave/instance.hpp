@@ -34,7 +34,7 @@ class Instance : public Shape {
     bool m_flipNormal;
     /// @brief Tracks whether this instance has been added to the scene, i.e., could be hit by ray tracing.
     bool m_visible;
-    // @brief Optional normal map of the instance used for bump mapping.
+    // @brief Optional normal map of the instance to be used for bump mapping.
     ref<Texture> m_normal;
 
     /// @brief Transforms the frame from object coordinates to world coordinates.
