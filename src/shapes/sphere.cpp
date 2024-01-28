@@ -6,21 +6,48 @@ namespace lightwave {
  */
 class Sphere : public Shape {
 private:
+    static bool intersectsAlphaMask(
+            const Ray& ray, Intersection& its, const float rayT
+    ) {
+        if (rayT < Epsilon || rayT > its.t) {
+            return false;
+        }
+
+        const Point position = ray(rayT);
+        const Vector normal = Vector(position).normalized();
+        const Point2 uv = {
+                atan2f(normal.x(), normal.z()) * Inv2Pi + 0.5f,
+                acosf(normal.y()) * InvPi + 0.5f
+        };
+
+        if (its.alphaMask->scalar(uv) < Epsilon) {
+            return false;
+        }
+
+        its.t = rayT;
+        its.position = position;
+        its.frame = Frame(normal);
+        its.uv = uv;
+        its.pdf = Inv4Pi;
+
+        return true;
+    }
+
     /**
      * Sets the SurfaceEvent data for an Intersection or AreaSample of this object.
      * @param surf pointer to the SurfaceEvent to be populated
      * @param position intersection or area sample position on the object's surface
      */
-    inline static void setSurfaceEventData(SurfaceEvent& surf, const Point& position) {
+    static void setSurfaceEventData(SurfaceEvent& surf, const Point& position) {
         const Vector normal = Vector(position).normalized();
 
         surf.position = normal; // normalizing ensures the point is on the surface of the sphere
         surf.frame = Frame(normal);
 
-        surf.uv.x() = atan2f(normal.x(), normal.z()) / (2.0f * Pi) + 0.5f;
-        surf.uv.y() = (acosf(normal.y()) / Pi) + 0.5f;
+        surf.uv.x() = atan2f(normal.x(), normal.z()) * Inv2Pi + 0.5f;
+        surf.uv.y() = acosf(normal.y()) * InvPi + 0.5f;
 
-        // since we sample the area uniformly, the pdf is given by 1/surfaceArea
+        // Since we sample the area uniformly, the pdf is given by 1/surfaceArea
         surf.pdf = Inv4Pi;
     }
 
@@ -47,10 +74,22 @@ public:
         float t0 = tca - thc;
         float t1 = tca + thc;
 
-        // We want the smaller but positive intersection distance.
         if (t0 > t1) {
             std::swap(t0, t1);
         }
+
+        // If the sphere has an alpha mask, we need to check both potential intersections against it
+        if (its.alphaMask) {
+            if (intersectsAlphaMask(ray, its, t0)) {
+                return true;
+            }
+            if (intersectsAlphaMask(ray, its, t1)) {
+                return true;
+            }
+            return false;
+        }
+
+        // We want the smaller but positive intersection distance
         if (t0 < Epsilon) {
             t0 = t1;
         }

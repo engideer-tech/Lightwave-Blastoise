@@ -33,13 +33,16 @@ void Instance::transformFrame(SurfaceEvent& surf) const {
         // When utilizing a normal map, use a matrix adjoint to transform the normal, and then simply recompute the
         // tangent and bitangent using the Frame constructor
         surf.frame = Frame(m_transform->applyNormal(newNormal).normalized());
+        surf.position = m_transform->apply(surf.position);
         const float newCrossProduct = surf.frame.tangent.cross(surf.frame.bitangent).length();
 
+        // Since the probability of sampling a certain point on an object relates to its surface area, we must scale the
+        // pdf proportionally to the scaling of surfaces (not volumes!) by the transformation. Since a cross product
+        // computes a surface area, it's a good fit for this.
         surf.pdf *= oldCrossProduct / newCrossProduct;
 
         surf.frame.tangent = surf.frame.tangent.normalized();
         surf.frame.bitangent = surf.frame.bitangent.normalized();
-        surf.position = m_transform->apply(surf.position);
 
         return;
     }
@@ -74,12 +77,17 @@ void Instance::transformFrame(SurfaceEvent& surf) const {
  * transform applied to this instance in the scene. Then performs the intersection for this instance's object.
  */
 bool Instance::intersect(const Ray& worldRay, Intersection& its, Sampler& rng) const {
-    // fast path, if no transform is needed
+    its.alphaMask = m_alpha;
+
+    // Fast path, if no transform is needed
     if (!m_transform) {
         if (m_shape->intersect(worldRay, its, rng)) {
             its.instance = this;
+            its.alphaMask = nullptr;
             return true;
         }
+
+        its.alphaMask = nullptr;
         return false;
     }
 
@@ -92,10 +100,14 @@ bool Instance::intersect(const Ray& worldRay, Intersection& its, Sampler& rng) c
         its.instance = this;
         transformFrame(its);
         its.t = (its.position - worldRay.origin).length();
+
+        its.alphaMask = nullptr;
         return true;
     }
 
     its.t = previousT;
+
+    its.alphaMask = nullptr;
     return false;
 }
 

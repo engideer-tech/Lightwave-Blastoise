@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <optional>
+#include <utility>
 
 namespace lightwave {
 
@@ -745,6 +746,7 @@ struct Intersection : public SurfaceEvent {
     Vector wo;
     /// @brief The intersection distance, which can also be used to specify a maximum distance when querying intersections.
     float t;
+    ref<Texture> alphaMask = nullptr;
 
     /// @brief Statistics recorded while traversing acceleration structures.
     struct {
@@ -754,11 +756,11 @@ struct Intersection : public SurfaceEvent {
         int primCounter = 0;
     } stats;
 
-    Intersection(const Vector &wo = Vector(), float t = Infinity)
-    : wo(wo), t(t) {}
+    explicit Intersection(const Vector& wo = Vector(), float t = Infinity, ref<Texture> alphaMask = nullptr)
+            : wo(wo), t(t), alphaMask(std::move(alphaMask)) {}
 
-    Intersection(const Intersection &other) = default;
-    Intersection &operator=(const Intersection &other) = default;
+    Intersection(const Intersection& other) = default;
+    Intersection& operator=(const Intersection& other) = default;
 
     /// @brief Reports whether an object has been hit.
     operator bool() const {

@@ -34,8 +34,16 @@ class Instance : public Shape {
     bool m_flipNormal;
     /// @brief Tracks whether this instance has been added to the scene, i.e., could be hit by ray tracing.
     bool m_visible;
-    // @brief Optional normal map of the instance to be used for bump mapping.
+    /**
+     * Optional normal map of the instance to be used for bump mapping (faking geometry on a flat plane by modifying
+     * the normals used for shading).
+     */
     ref<Texture> m_normal;
+    /**
+     * Optional alpha map of the instance to be used for alpha masking (faking complex shapes by allowing rays to pass
+     * through the object at certain spots).
+     */
+    ref<Texture> m_alpha;
 
     /// @brief Transforms the frame from object coordinates to world coordinates.
     inline void transformFrame(SurfaceEvent& surf) const;
@@ -49,6 +57,7 @@ public:
         m_transform = properties.getOptionalChild<Transform>();
         m_visible = false;
         m_normal = properties.get<Texture>("normal", nullptr);
+        m_alpha = properties.get<Texture>("alpha", nullptr);
 
         m_flipNormal = false;
         if (m_transform && m_transform->determinant() < 0) {
