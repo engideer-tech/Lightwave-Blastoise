@@ -26,6 +26,7 @@
 
         <instance>
             <shape type="rectangle"/>
+            <texture name="alpha" type="image" linear="true" filename="./textures/alpha_mask.png"/>
             <bsdf type="diffuse">
                 <texture name="albedo" type="checkerboard" scale="32" color0="0.1" color1="0.9"/>
             </bsdf>

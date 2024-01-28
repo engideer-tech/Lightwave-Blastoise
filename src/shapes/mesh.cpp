@@ -76,15 +76,22 @@ protected:
         if (t < LargerEpsilon || t > its.t) {
             return false;
         }
-        its.t = t;
 
         const Vertex interpolatedVertex = Vertex::interpolate({u, v}, v0V, v1V, v2V);
+
+        // If the sphere has an alpha mask, we need to check whether the coordinate is transparent
+        if (its.alphaMask && its.alphaMask->scalar(interpolatedVertex.texcoords) < rng.next()) {
+            return false;
+        }
+
+        its.t = t;
+        its.uv = interpolatedVertex.texcoords;
         its.position = interpolatedVertex.position;
 
-        const Vector normal = m_smoothNormals ? interpolatedVertex.normal.normalized() : v0v1.cross(v0v2).normalized();
+        const Vector normal = m_smoothNormals
+                              ? interpolatedVertex.normal.normalized()
+                              : v0v1.cross(v0v2).normalized();
         its.frame = Frame(normal);
-
-        its.uv = interpolatedVertex.texcoords;
 
         return true;
     }

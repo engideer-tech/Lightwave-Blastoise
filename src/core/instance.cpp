@@ -114,8 +114,8 @@ bool Instance::intersect(const Ray& worldRay, Intersection& its, Sampler& rng) c
 }
 
 Bounds Instance::getBoundingBox() const {
+    // Fast path
     if (!m_transform) {
-        // fast path
         return m_shape->getBoundingBox();
     }
 
