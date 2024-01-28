@@ -8,6 +8,36 @@ namespace lightwave {
  * Transforms the position and frame of the SurfaceEvent from object to world coordinates.
  */
 void Instance::transformFrame(SurfaceEvent& surf) const {
+    if (m_normal) {
+        // logger(EInfo, "normal %s tangent %s bitangent %s", surf.frame.normal, surf.frame.tangent, surf.frame.bitangent);
+        const Color textureNormalRgb = m_normal->evaluate(surf.uv);
+        const Vector textureNormal = {
+                textureNormalRgb.r() * 2.0f - 1.0f,
+                textureNormalRgb.g() * 2.0f - 1.0f,
+                textureNormalRgb.b() * 2.0f - 1.0f
+        };
+
+        const Vector newNormal = textureNormal.x() * surf.frame.tangent
+                                 + textureNormal.y() * surf.frame.bitangent
+                                 + textureNormal.z() * surf.frame.normal;
+
+        if (!m_transform) {
+            surf.frame.normal = newNormal.normalized();
+            return;
+        }
+
+        const float oldCrossProduct = surf.frame.tangent.cross(surf.frame.bitangent).length();
+        surf.frame = Frame(m_transform->applyNormal(newNormal).normalized());
+        const float newCrossProduct = surf.frame.tangent.cross(surf.frame.bitangent).length();
+
+        surf.pdf *= oldCrossProduct / newCrossProduct;
+
+        surf.frame.tangent = surf.frame.tangent.normalized();
+        surf.frame.bitangent = surf.frame.bitangent.normalized();
+
+        return;
+    }
+
     if (!m_transform) {
         return;
     }
@@ -49,8 +79,7 @@ bool Instance::intersect(const Ray& worldRay, Intersection& its, Sampler& rng) c
 
     const float previousT = its.t;
     Ray localRay = m_transform->inverse(worldRay);
-    const float transformedRayDirLength = localRay.direction.length();
-    its.t *= transformedRayDirLength;
+    its.t *= localRay.direction.length();
     localRay = localRay.normalized();
 
     if (m_shape->intersect(localRay, its, rng)) {

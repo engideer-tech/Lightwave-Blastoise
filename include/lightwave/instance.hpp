@@ -21,7 +21,7 @@ namespace lightwave {
  */
 class Instance : public Shape {
     /// @brief When an instance is wrapped within an area light object, this will reference it.
-    Light *m_light;
+    Light* m_light;
     /// @brief The shape wrapped by the instance.
     ref<Shape> m_shape;
     /// @brief The material that the shape should be rendered with (can be null for non-reflecting objects).
@@ -34,19 +34,22 @@ class Instance : public Shape {
     bool m_flipNormal;
     /// @brief Tracks whether this instance has been added to the scene, i.e., could be hit by ray tracing.
     bool m_visible;
-    
+    // @brief Optional normal map of the instance used for bump mapping.
+    ref<Texture> m_normal;
+
     /// @brief Transforms the frame from object coordinates to world coordinates.
-    inline void transformFrame(SurfaceEvent &surf) const;
+    inline void transformFrame(SurfaceEvent& surf) const;
 
 public:
-    Instance(const Properties &properties) 
-        : m_light(nullptr) {
+    explicit Instance(const Properties& properties)
+            : m_light(nullptr) {
         m_shape = properties.getChild<Shape>();
         m_bsdf = properties.getOptionalChild<Bsdf>();
         m_emission = properties.getOptionalChild<Emission>();
         m_transform = properties.getOptionalChild<Transform>();
         m_visible = false;
-        
+        m_normal = properties.get<Texture>("normal", nullptr);
+
         m_flipNormal = false;
         if (m_transform && m_transform->determinant() < 0) {
             m_flipNormal = !m_flipNormal;
@@ -54,23 +57,26 @@ public:
     }
 
     /// @brief Returns the material that the shape should be rendered with (can be null for non-reflecting objects).
-    Bsdf *bsdf() const { return m_bsdf.get(); }
+    Bsdf* bsdf() const { return m_bsdf.get(); }
+
     /// @brief Returns the distribution of light the shape should emit (can be null for non-emissive objects).
-    Emission *emission() const { return m_emission.get(); }
+    Emission* emission() const { return m_emission.get(); }
+
     /// @brief Returns the light object that contains this instance (or null if this instance is not part of any area light).
-    Light *light() const { return m_light; }
+    Light* light() const { return m_light; }
 
     /// @brief Returns whether this instance has been added to the scene, i.e., could be hit by ray tracing.
     bool isVisible() const { return m_visible; }
+
     /// @brief Sets the visible flag of this instance to true.
     void markAsVisible() override {
         m_visible = true;
     }
 
     /// @brief Sets the parent light object that contains this instance.
-    void setLight(Light *light) {
-        if (m_light) {
-            lightwave_throw("instances can only have one light associated with them, %s has multiple!", indent(this));
+    void setLight(Light* light) {
+        if (m_light != nullptr) {
+            lightwave_throw("instances can only have one light associated with them, %s has multiple!", indent(this))
         }
         m_light = light;
     }
@@ -82,30 +88,33 @@ public:
      * @param rng A random number generator used to steer sampling decisions (e.g., alpha masking or volume intersections).
      * @return @c true if an intersection was found.
      */
-    bool intersect(const Ray &ray, Intersection &its, Sampler &rng) const override;
-    /// @brief Returns the bounding box of the instance in world coordinates. 
+    bool intersect(const Ray& ray, Intersection& its, Sampler& rng) const override;
+
+    /// @brief Returns the bounding box of the instance in world coordinates.
     Bounds getBoundingBox() const override;
-    /// @brief Returns the centroid of the instance in world coordinates. 
+
+    /// @brief Returns the centroid of the instance in world coordinates.
     Point getCentroid() const override;
+
     /**
      * @brief Samples a point in world coordinates on the surface of this instance.
      * @param rng A random number generator used to steer sampling decisions.
      */
-    AreaSample sampleArea(Sampler &rng) const override;
+    AreaSample sampleArea(Sampler& rng) const override;
 
     /// @brief Returns a textual representation of this image.
     std::string toString() const override {
         return tfm::format(
-            "Instance[\n"
-            "  shape = %s,\n"
-            "  bsdf = %s,\n"
-            "  emission = %s,\n"
-            "  transform = %s,\n"
-            "]",
-            indent(m_shape),
-            indent(m_bsdf),
-            indent(m_emission),
-            indent(m_transform)
+                "Instance[\n"
+                "  shape = %s,\n"
+                "  bsdf = %s,\n"
+                "  emission = %s,\n"
+                "  transform = %s,\n"
+                "]",
+                indent(m_shape),
+                indent(m_bsdf),
+                indent(m_emission),
+                indent(m_transform)
         );
     }
 };

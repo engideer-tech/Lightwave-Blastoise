@@ -24,6 +24,11 @@ public:
     Transform() {}
     Transform(const Properties &) {}
 
+    Vector applyNormal(const Vector& normal) const {
+        const Vector4 result = m_inverse.transpose() * Vector4(normal, 1);
+        return {result.x(), result.y(), result.z()};
+    }
+
     /// @brief Transforms the given point.
     Point apply(const Point &point) const {
         const Vector4 result = m_transform * Vector4(Vector(point), 1);
