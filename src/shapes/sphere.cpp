@@ -6,8 +6,14 @@ namespace lightwave {
  */
 class Sphere : public Shape {
 private:
+    /**
+     * Checks whether the given ray distance could lead to a valid intersection, and if so, checks the value of the
+     * alpha mask at that position. alpha=0 means the ray always passes through and there is no intersection,
+     * alpha=1 means there always is one, and values in between randomly allow *some* rays to pass.
+     * In case of intersection, the SurfaceEvent data is also set here.
+     */
     static bool intersectsAlphaMask(
-            const Ray& ray, Intersection& its, const float rayT
+            const Ray& ray, Intersection& its, const float rayT, Sampler& rng
     ) {
         if (rayT < Epsilon || rayT > its.t) {
             return false;
@@ -20,7 +26,7 @@ private:
                 acosf(normal.y()) * InvPi + 0.5f
         };
 
-        if (its.alphaMask->scalar(uv) < Epsilon) {
+        if (its.alphaMask->scalar(uv) < rng.next()) {
             return false;
         }
 
@@ -80,10 +86,10 @@ public:
 
         // If the sphere has an alpha mask, we need to check both potential intersections against it
         if (its.alphaMask) {
-            if (intersectsAlphaMask(ray, its, t0)) {
+            if (intersectsAlphaMask(ray, its, t0, rng)) {
                 return true;
             }
-            if (intersectsAlphaMask(ray, its, t1)) {
+            if (intersectsAlphaMask(ray, its, t1, rng)) {
                 return true;
             }
             return false;

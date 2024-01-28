@@ -18,10 +18,12 @@
 
         <instance>
             <shape type="sphere"/>
+            <texture name="alpha" type="image" linear="true" filename="./textures/alpha_mask.png"/>
             <bsdf type="diffuse">
                 <texture name="albedo" type="checkerboard" scale="16,8" color0="0.08,0.25,0.70" color1="0.9"/>
             </bsdf>
         </instance>
+
         <instance>
             <shape type="rectangle"/>
             <bsdf type="diffuse">

@@ -746,6 +746,7 @@ struct Intersection : public SurfaceEvent {
     Vector wo;
     /// @brief The intersection distance, which can also be used to specify a maximum distance when querying intersections.
     float t;
+    /// @brief The alpha mask for the current instance, required by the primitive intersection functions.
     ref<Texture> alphaMask = nullptr;
 
     /// @brief Statistics recorded while traversing acceleration structures.

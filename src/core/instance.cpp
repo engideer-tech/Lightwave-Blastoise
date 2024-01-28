@@ -77,6 +77,8 @@ void Instance::transformFrame(SurfaceEvent& surf) const {
  * transform applied to this instance in the scene. Then performs the intersection for this instance's object.
  */
 bool Instance::intersect(const Ray& worldRay, Intersection& its, Sampler& rng) const {
+    // Pass the alpha mask to the primitive intersection function via the Intersection object. Unset property before
+    // return to avoid interference with other Instances.
     its.alphaMask = m_alpha;
 
     // Fast path, if no transform is needed
