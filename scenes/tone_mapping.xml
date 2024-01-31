@@ -1,4 +1,3 @@
-
 <postprocess type="tone_mapping">
     <image name="input" id="low_contrast" filename="Desk.exr"/>
     <image id="tone_mapping"/>

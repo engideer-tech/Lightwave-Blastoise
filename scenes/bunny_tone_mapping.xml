@@ -40,5 +40,5 @@
         </instance>
     </scene>
     <sampler type="independent" count="64"/>
-    <image id="test"/>
+    <image id="bunny_tone_mapping"/>
 </integrator>

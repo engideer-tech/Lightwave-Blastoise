@@ -219,6 +219,4 @@
     </scene>
     <image id="ducks_thinlens"/>
     <sampler type="independent" count="64"/>
-
-
 </integrator>
