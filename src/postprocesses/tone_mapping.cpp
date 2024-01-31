@@ -37,7 +37,7 @@ public:
             m_output->get(pixel) = m_input->get(pixel) * (l_new / l);
         }
 
-        m_output->saveAt("../scenes/Desk1.exr");
+        m_output->save();
         std::cout << "Tone Mapped Image is generated with the extended Reinhard method" << std::endl;
     }
 

@@ -42,3 +42,7 @@
     <sampler type="independent" count="64"/>
     <image id="bunny_tone_mapping"/>
 </integrator>
+<postprocess type="tone_mapping">
+    <ref name="input" id="bunny_tone_mapping"/>
+    <image id="bunny_tone_mapped"/>
+</postprocess>
