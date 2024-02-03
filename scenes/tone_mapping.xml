@@ -1,4 +1,5 @@
 <postprocess type="tone_mapping">
     <image name="input" filename="./Desk.exr"/>
     <image id="tone_mapping"/>
+    <float name="bias" value="0.1"/>
 </postprocess>

@@ -3,10 +3,16 @@
 namespace lightwave {
 
 class ToneMapping : public Postprocess {
+private:
+    float m_bias;
+
 public:
-    explicit ToneMapping(const Properties& properties) : Postprocess(properties) {}
+    explicit ToneMapping(const Properties& properties) : Postprocess(properties) {
+        m_bias = properties.get<float>("bias");
+    }
 
     void execute() override {
+
         m_output->initialize(m_input->resolution());
 
         float max_l = 0.0f;
@@ -28,17 +34,16 @@ public:
 
             //We can use the below method by Drago et al. to choose the degree of contrast we want, by varying the bias.
             //Bias 0.5 is similar to tone mapping with extended Reinhard
-            const float bias = 0.1f;
-            const float p1 = 1.0f / log10f(1 + max_l);
+            const float p1 = 1.0f / log10f(1.0f + max_l);
             const float p2 = log10f(1.0f + l);
-            const float p3 = log10f(2.0f + 8.0f * pow(l / max_l, log10f(bias) / log10f(0.5f)));
+            const float p3 = log10f(2.0f + 8.0f * pow(l / max_l, log10f(m_bias) / log10f(0.5f)));
             const float l_new = p1 * (p2 / p3);
 
             m_output->get(pixel) = m_input->get(pixel) * (l_new / l);
         }
 
         m_output->save();
-        std::cout << "Tone Mapped Image is generated with the extended Reinhard method" << std::endl;
+        std::cout << "Tone Mapped Image is generated with Drago et. al's method" << std::endl;
     }
 
     std::string toString() const override {
