@@ -5,10 +5,12 @@ namespace lightwave {
 class ToneMapping : public Postprocess {
 private:
     float m_bias;
+    float m_factor;
 
 public:
     explicit ToneMapping(const Properties& properties) : Postprocess(properties) {
-        m_bias = properties.get<float>("bias");
+        m_bias = properties.get<float>("bias", 0.1f);
+        m_factor = log10f(m_bias) / log10f(0.5f);
     }
 
     void execute() override {
@@ -36,7 +38,7 @@ public:
             //Bias 0.5 is similar to tone mapping with extended Reinhard
             const float p1 = 1.0f / log10f(1.0f + max_l);
             const float p2 = log10f(1.0f + l);
-            const float p3 = log10f(2.0f + 8.0f * pow(l / max_l, log10f(m_bias) / log10f(0.5f)));
+            const float p3 = log10f(2.0f + 8.0f * powf(l / max_l, m_factor));
             const float l_new = p1 * (p2 / p3);
 
             m_output->get(pixel) = m_input->get(pixel) * (l_new / l);
