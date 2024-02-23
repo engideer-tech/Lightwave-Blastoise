@@ -6,8 +6,9 @@
 namespace lightwave {
 /**
  * Transforms the position and frame of the SurfaceEvent from object to world coordinates.
- * If the instance has a normal map, we first use it to compute the new Frame normal, and apply the transformation
- * afterwards.
+ * When using normal maps, we first compute the new shading normal from the mesh data and normal map, transform it
+ * with the transform matrix adjoint, and recompute the tangents from it.
+ * Otherwise, we transform the tangents and recompute the normal from them.
  */
 void Instance::transformFrame(SurfaceEvent& surf) const {
     if (m_normal) {
@@ -30,8 +31,7 @@ void Instance::transformFrame(SurfaceEvent& surf) const {
         }
 
         const float oldCrossProduct = surf.frame.tangent.cross(surf.frame.bitangent).length();
-        // When utilizing a normal map, use a matrix adjoint to transform the normal, and then simply recompute the
-        // tangent and bitangent using the Frame constructor
+        // Transform the normal, set it, and recompute the tangents using the Frame constructor
         surf.frame = Frame(m_transform->applyNormal(newNormal).normalized());
         surf.position = m_transform->apply(surf.position);
         const float newCrossProduct = surf.frame.tangent.cross(surf.frame.bitangent).length();

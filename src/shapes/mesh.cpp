@@ -79,7 +79,7 @@ protected:
 
         const Vertex interpolatedVertex = Vertex::interpolate({u, v}, v0V, v1V, v2V);
 
-        // If the sphere has an alpha mask, we need to check whether the coordinate is transparent
+        // If the primitive has an alpha mask, we need to check whether the coordinate is transparent
         if (its.alphaMask && its.alphaMask->scalar(interpolatedVertex.texcoords) < rng.next()) {
             return false;
         }

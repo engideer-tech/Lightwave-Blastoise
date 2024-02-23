@@ -58,7 +58,7 @@ public:
             return false;
         }
 
-        // If the sphere has an alpha mask, we need to check whether the coordinate is transparent
+        // If the primitive has an alpha mask, we need to check whether the coordinate is transparent
         if (its.alphaMask) {
             const Point2 uv = {(position.x() + 1.0f) * 0.5f, (position.y() + 1.0f) * 0.5f};
             if (its.alphaMask->scalar(uv) < rng.next()) {

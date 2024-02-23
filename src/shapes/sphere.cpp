@@ -19,8 +19,7 @@ private:
             return false;
         }
 
-        const Point position = ray(rayT);
-        const Vector normal = Vector(position).normalized();
+        const Vector normal = Vector(ray(rayT)).normalized();
         const Point2 uv = {
                 atan2f(normal.x(), normal.z()) * Inv2Pi + 0.5f,
                 acosf(normal.y()) * InvPi + 0.5f
@@ -31,9 +30,11 @@ private:
         }
 
         its.t = rayT;
-        its.position = position;
+        its.position = normal; // normalizing ensures the point is on the surface of the sphere
         its.frame = Frame(normal);
         its.uv = uv;
+
+        // Since we sample the area uniformly, the pdf is given by 1/surfaceArea
         its.pdf = Inv4Pi;
 
         return true;
@@ -50,8 +51,10 @@ private:
         surf.position = normal; // normalizing ensures the point is on the surface of the sphere
         surf.frame = Frame(normal);
 
-        surf.uv.x() = atan2f(normal.x(), normal.z()) * Inv2Pi + 0.5f;
-        surf.uv.y() = acosf(normal.y()) * InvPi + 0.5f;
+        surf.uv = {
+                atan2f(normal.x(), normal.z()) * Inv2Pi + 0.5f,
+                acosf(normal.y()) * InvPi + 0.5f
+        };
 
         // Since we sample the area uniformly, the pdf is given by 1/surfaceArea
         surf.pdf = Inv4Pi;
@@ -69,11 +72,11 @@ public:
     bool intersect(const Ray& ray, Intersection& its, Sampler& rng) const override {
         const Vector L = Point(0.0f) - ray.origin; // ray origin to sphere center vector
         const float tca = L.dot(ray.direction); // project onto ray to get vector from ray origin to middle point
-        if (tca < 0) {
+        if (tca < 0.0f) {
             return false;
         }
         const float dSquared = L.dot(L) - tca * tca; // pythagoras; d = vector from sphere origin to middle point
-        if (dSquared > 1) { // if longer than radius then no intersection
+        if (dSquared > 1.0f) { // if longer than radius then no intersection
             return false;
         }
         const float thc = std::sqrt(1.0f - dSquared); // pythagoras; thc = vector from intersection to middle point
@@ -84,15 +87,10 @@ public:
             std::swap(t0, t1);
         }
 
-        // If the sphere has an alpha mask, we need to check both potential intersections against it
+        // If the primitive has an alpha mask, we need to check both potential intersections against it
         if (its.alphaMask) {
-            if (intersectsAlphaMask(ray, its, t0, rng)) {
-                return true;
-            }
-            if (intersectsAlphaMask(ray, its, t1, rng)) {
-                return true;
-            }
-            return false;
+            return intersectsAlphaMask(ray, its, t0, rng)
+                   || intersectsAlphaMask(ray, its, t1, rng);
         }
 
         // We want the smaller but positive intersection distance
