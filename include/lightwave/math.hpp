@@ -100,7 +100,7 @@ protected:
 
 public:
     /// @brief The datatype used to store the components of the point.
-    typedef T Type;
+    using Type = T;
     /// @brief The dimensionality of the point.
     static constexpr int Dimension = D;
 
@@ -290,14 +290,14 @@ class TMatrix {
 
 public:
     /// @brief The datatype used to store the elements of the point.
-    typedef T Type;
+    using Type = T;
     /// @brief The number of rows in the matrix.
     static constexpr int Rows = R;
     /// @brief The number of columns in the matrix.
     static constexpr int Columns = C;
     
     /// @brief Creates a matrix filled with zeros.
-    TMatrix() {}
+    TMatrix() = default;
  
     TMatrix(std::initializer_list<Type> l) {
         assert(l.size() == (Rows * Columns)); // "cannot initialize Matrix<%d, %d> with %d elements", Rows, Columns, l.size()
@@ -322,11 +322,15 @@ public:
 
     /// @brief Sets a row of the matrix to a given vector, with index ranging from @c 0 to @code Rows - 1 @endcode .
     auto setRow(int rowIndex, const TVector<Type, Columns> &vector) {
-        for (int c = 0; c < Columns; c++) (*this)(rowIndex, c) = vector[c];
+        for (int c = 0; c < Columns; c++) {
+            (*this)(rowIndex, c) = vector[c];
+        }
     }
     /// @brief Sets a column of the matrix to a given vector, with index ranging from @c 0 to @code Columns - 1 @endcode .
     auto setColumn(int columnIndex, const TVector<Type, Rows> &vector) {
-        for (int r = 0; r < Rows; r++) (*this)(r, columnIndex) = vector[r];
+        for (int r = 0; r < Rows; r++) {
+            (*this)(r, columnIndex) = vector[r];
+        }
     }
 
     /// @brief Returns the product of @code matrix * vector @endcode .
@@ -405,7 +409,7 @@ private:
 
 public:
     /// @brief The datatype used to store the components of the point.
-    typedef T Type;
+    using Type = T;
     /// @brief The dimensionality of the point.
     static constexpr int Dimension = D;
 
@@ -595,7 +599,7 @@ inline Vector refract(const Vector &w, const Vector &n, float eta) {
     const float k = 1 - sqr(invEta) * (1 - sqr(n.dot(w)));
     if (k < 0) {
         // total internal reflection
-        return Vector();
+        return {};
     }
     return (invEta * n.dot(w) - sqrt(k)) * n - invEta * w;
 }
@@ -609,7 +613,7 @@ struct Ray {
     /// @brief The number of bounces encountered by the ray, for use in integrators.
     int depth = 0;
 
-    Ray() {}
+    Ray() = default;
     Ray(Point origin, Vector direction, int depth = 0)
     : origin(origin), direction(direction), depth(depth) {}
 
@@ -620,11 +624,11 @@ struct Ray {
 
     /// @brief Returns a copy of the ray with normalized direction vector (useful after applying transforms). 
     Ray normalized() const {
-        return Ray(
+        return {
             origin,
             direction.normalized(),
             depth
-        );
+        };
     }
 };
 
@@ -644,7 +648,7 @@ struct Frame {
     /// @brief The bitangent vector, which lies in the surface and is orthogonal to the tangent vector.
     Vector bitangent;
 
-    Frame() {}
+    Frame() = default;
 
     /// @brief Constructs a frame with arbitrary tangent and bitangent vector from a given normal vector. 
     explicit Frame(const Vector &normal) : normal(normal) {
@@ -704,7 +708,7 @@ static T interpolateBarycentric(const Vector2 &bary, const T &a, const T &b, con
 /// @brief Barycentric interpolation ([0,0] returns a, [1,0] returns b, and [0,1] returns c).
 template<>
 Point interpolateBarycentric(const Vector2 &bary, const Point &a, const Point &b, const Point &c) {
-    return Point(interpolateBarycentric(bary, Vector(a), Vector(b), Vector(c)));
+    return {interpolateBarycentric(bary, Vector(a), Vector(b), Vector(c))};
 }
 
 /// @brief A vertex of a triangle mesh.
@@ -764,7 +768,7 @@ struct Intersection : public SurfaceEvent {
     Intersection& operator=(const Intersection& other) = default;
 
     /// @brief Reports whether an object has been hit.
-    operator bool() const {
+    explicit operator bool() const {
         return instance != nullptr;
     }
 

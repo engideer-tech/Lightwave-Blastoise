@@ -30,15 +30,15 @@ public:
         const float theta = acosf(localDirection.y());
         const float phi = atan2f(-localDirection.z(), localDirection.x());
 
-        const float u = phi / (2.0f * Pi) + 0.5f;
-        const float v = theta / Pi;
+        const float u = phi * Inv2Pi + 0.5f;
+        const float v = theta * InvPi;
 
         return {m_texture->evaluate({u, v})};
     }
 
     DirectLightSample sampleDirect(const Point& origin, Sampler& rng) const override {
-        Vector direction = squareToUniformSphere(rng.next2D()).normalized();
-        auto E = evaluate(direction);
+        const Vector direction = squareToUniformSphere(rng.next2D()).normalized();
+        const Color eval = evaluate(direction).value;
 
         // implement better importance sampling here, if you ever need it
         // (useful for environment maps with bright tiny light sources, like the
@@ -46,7 +46,7 @@ public:
 
         return {
                 .wi = direction,
-                .weight = E.value / Inv4Pi,
+                .weight = eval * Inv4Pi,
                 .distance = Infinity,
         };
     }

@@ -3,18 +3,19 @@
 namespace lightwave {
 
 class BVHPerformance : public SamplingIntegrator {
-    float m_unit;
+private:
+    float m_scale;
 
 public:
     explicit BVHPerformance(const Properties& properties) : SamplingIntegrator(properties) {
-        m_unit = properties.get<float>("unit", 1);
+        m_scale = 1.0f / properties.get<float>("unit", 1.0f);
     }
 
     Color Li(const Ray& ray, Sampler& rng) override {
-        Intersection its = m_scene->intersect(ray, rng);
-        return {its.stats.bvhCounter / m_unit,
-                its.stats.primCounter / m_unit,
-                0};
+        const Intersection its = m_scene->intersect(ray, rng);
+        return {its.stats.bvhCounter * m_scale,
+                its.stats.primCounter * m_scale,
+                0.0f};
     }
 
     std::string toString() const override {

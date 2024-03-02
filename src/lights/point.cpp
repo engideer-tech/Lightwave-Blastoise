@@ -2,8 +2,12 @@
 
 namespace lightwave {
 /**
- * A light, modeled with a single point in space, shining equally strong in all directions from it.
- * Suffers from light intensity fall-off.
+ * A light modelled with a single point in space, shining equally strong in all directions from it.
+ * This light is being sampled via next event estimation using a reparametrized surface rendering equation, where we
+ * integrate over all points on an emitter instead of all directions in the shading hemisphere. To express the
+ * receiver's dw using the emitter's dA, we must account for projection, and thus multiply by the the emitter's
+ * orientation as well as divide by its squared distance.
+ * Since the orientation of a point light doesn't affect its projection, we leave out the cos-term.
  */
 class PointLight final : public Light {
 private:

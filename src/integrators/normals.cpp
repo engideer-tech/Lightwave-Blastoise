@@ -16,7 +16,7 @@ public:
     Color Li(const Ray& ray, Sampler& rng) override {
         const Intersection intersection = m_scene->intersect(ray, rng);
         const Vector normal = intersection ? intersection.frame.normal : Vector(0.0f);
-        return remap ? Color((normal + Vector(1.0f)) / 2) : Color(normal);
+        return remap ? Color((normal + Vector(1.0f)) * 0.5f) : Color(normal);
     }
 
     std::string toString() const override {

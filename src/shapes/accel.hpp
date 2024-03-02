@@ -31,7 +31,7 @@ namespace lightwave {
 class AccelerationStructure : public Shape {
 private:
     /// @brief The datatype used to index BVH nodes and the primitive index remapping.
-    typedef int32_t NodeIndex;
+    using NodeIndex = int32_t;
     /// @brief The number of bins to use when computing an optimal SAH split.
     static constexpr int BIN_NUM = 16;
 
@@ -158,10 +158,12 @@ private:
         // take the minimum
         const float tFar = elementwiseMax(t1, t2).minComponent();
 
-        if (tFar < tNear)
+        if (tFar < tNear) {
             return Infinity; // the ray does not intersect the bounding box
-        if (tFar < Epsilon)
+        }
+        if (tFar < Epsilon) {
             return Infinity; // the bounding box lies behind the ray origin
+        }
 
         return tNear; // return the first intersection with the bounding box
         // (may also be negative!)
@@ -292,8 +294,6 @@ private:
             return;
         }
 
-        // std::cout << tfm::format("%s\n", splitPosition);
-
         // partition algorithm (similar to quicksort)
         // the primitives must be re-ordered so that all children of the left node will have a smaller index than
         // firstRightIndex, and nodes on the right will have an index larger or equal to firstRightIndex
@@ -310,14 +310,14 @@ private:
 
         const NodeIndex leftCount = firstRightIndex - parent.firstPrimitiveIndex();
         const NodeIndex rightCount = parent.primitiveCount - leftCount;
+        // if either child gets no primitives, we abort subdividing
         if (leftCount == 0 || rightCount == 0) {
-            // if either child gets no primitives, we abort subdividing
             return;
         }
 
         // the two children will always be contiguous in our m_nodes list
         const auto leftChildIndex = static_cast<NodeIndex>(m_nodes.size());
-        const auto rightChildIndex = static_cast<NodeIndex>(m_nodes.size() + 1);
+        const auto rightChildIndex = leftChildIndex + 1;
         // mark the parent node as internal node
         parent.primitiveCount = 0;
         parent.leftFirst = leftChildIndex;
@@ -389,9 +389,13 @@ public:
         return false;
     }
 
-    Bounds getBoundingBox() const override { return rootNode().aabb; }
+    Bounds getBoundingBox() const override {
+        return rootNode().aabb;
+    }
 
-    Point getCentroid() const override { return rootNode().aabb.center(); }
+    Point getCentroid() const override {
+        return rootNode().aabb.center();
+    }
 };
 
 } // namespace lightwave

@@ -16,8 +16,7 @@ public:
     }
 
     /**
-     * The probability of a light sample picking exactly the direction `wi`
-     * that results from reflecting `wo` is zero,
+     * The probability of a light sample picking exactly the direction `wi` that results from reflecting `wo` is zero,
      * hence we can just ignore that case and always return black.
      */
     BsdfEval evaluate(const Point2& uv, const Vector& wo, const Vector& wi) const override {
@@ -25,7 +24,8 @@ public:
     }
 
     /**
-     * Since conductor reflections are fully deterministic, rng isn't needed.
+     * Since conductor reflections are fully deterministic, rng isn't needed. Also note that this BSDF doesn't use the
+     * cosTheta term, since all light is always fully reflected (depending only on the reflectance map).
      */
     BsdfSample sample(const Point2& uv, const Vector& wo, Sampler& rng) const override {
         const Vector wi = reflect(wo, m_normal).normalized();

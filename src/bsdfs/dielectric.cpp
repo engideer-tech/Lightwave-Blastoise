@@ -7,9 +7,9 @@ namespace lightwave {
  * material). Examples include water, glass, etc. It is also deterministic like a conductor, meaning each wi results in
  * exactly two wo's.
  * The refracted light portion is not 'reflected' symmetrically into the inside of the medium due a change in the
- * speed of light between the two. This skewness is given by the Index of Reflection: the larger the speed difference,
+ * speed of light between the two. This skewness is given by the Index of Refraction: the larger the speed difference,
  * the larger the skewness.
- * The relative amount of reflected light is given by the fresnel equation, with the amount of refracted light being
+ * The relative amount of reflected light F is given by the fresnel equation, with the amount of refracted light being
  * equal to 1 - F.
  */
 class Dielectric : public Bsdf {
@@ -26,9 +26,8 @@ public:
     }
 
     /**
-     * The probability of a light sample picking exactly the direction `wi`
-     * that results from reflecting or refracting `wo` is zero,
-     * hence we can just ignore that case and always return black.
+     * The probability of a light sample picking exactly the direction `wi` that results from reflecting or refracting
+     * `wo` is zero, hence we can just ignore that case and always return black.
      */
     BsdfEval evaluate(const Point2& uv, const Vector& wo, const Vector& wi) const override {
         return BsdfEval::invalid();
@@ -70,6 +69,7 @@ public:
             // That is, the angle between two wi's will be different after refraction.
             weight = m_transmittance->evaluate(uv) / sqr(eta);
         }
+
         return {wi, weight};
     }
 

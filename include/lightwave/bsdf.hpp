@@ -29,7 +29,9 @@ struct BsdfSample {
     }
 
     /// @brief Tests whether the sample is invalid (i.e., sampling has failed).
-    bool isInvalid() const { return weight == Color(0); }
+    bool isInvalid() const {
+        return weight == Color(0);
+    }
 };
 
 /// @brief The result of evaluating a material using @ref Bsdf::evaluate .
@@ -45,7 +47,9 @@ struct BsdfEval {
         };
     }
 
-    bool isInvalid() const { return value == Color(0); }
+    bool isInvalid() const {
+        return value == Color(0);
+    }
 };
 
 /// @brief A Bsdf, representing the scattering distribution of a surface.
@@ -61,10 +65,10 @@ public:
      * @param wi The incoming direction light comes from, pointing away
      * from the surface, in local coordinates.
      */
-    virtual BsdfEval evaluate(const Point2 &uv, const Vector &wo,
-                              const Vector &wi) const {
+    virtual BsdfEval evaluate(const Point2& uv, const Vector& wo, const Vector& wi) const {
         NOT_IMPLEMENTED
     }
+
     /**
      * @brief Samples a direction according to the distribution of the Bsdf in
      * local coordinates (i.e., the normal is assumed to be [0,0,1]).
@@ -75,8 +79,7 @@ public:
      * from the surface, in local coordinates.
      * @param rng A random number generator used to steer the sampling.
      */
-    virtual BsdfSample sample(const Point2 &uv, const Vector &wo,
-                              Sampler &rng) const = 0;
+    virtual BsdfSample sample(const Point2& uv, const Vector& wo, Sampler& rng) const = 0;
 };
 
 } // namespace lightwave

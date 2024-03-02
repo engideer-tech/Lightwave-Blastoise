@@ -21,7 +21,8 @@ protected:
     Matrix4x4 m_inverse = Matrix4x4::identity();
 
 public:
-    Transform() {}
+    Transform() = default;
+
     Transform(const Properties &) {}
 
     /// @brief Transforms the given vector using the matrix adjoint (transpose of the inverse).
@@ -39,7 +40,7 @@ public:
     /// @brief Transforms the given vector.
     Vector apply(const Vector &vector) const {
         const Vector4 result = m_transform * Vector4(vector, 0);
-        return Vector(result.x(), result.y(), result.z());
+        return {result.x(), result.y(), result.z()};
     }
 
     /**
@@ -63,7 +64,7 @@ public:
     /// @brief Applies the inverse transform to the given vector.
     Vector inverse(const Vector &vector) const {
         const Vector4 result = m_inverse * Vector4(vector, 0);
-        return Vector(result.x(), result.y(), result.z());
+        return {result.x(), result.y(), result.z()};
     }
 
     /**
@@ -135,7 +136,9 @@ public:
                 rotation(row, column) = (1 - cos) * u[row] * u[column] + (
                     row == column ?
                         cos :
-                        (row == (column + 1) % axis.Dimension ? +1 : -1) * sin * u[((axis.Dimension - row) + (axis.Dimension - column)) % axis.Dimension]
+                        (row == (column + 1) % axis.Dimension ? +1 : -1)
+                            * sin
+                            * u[((axis.Dimension - row) + (axis.Dimension - column)) % axis.Dimension]
                 );
             }
         }

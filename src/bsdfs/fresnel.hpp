@@ -26,25 +26,25 @@ template <typename T> inline T schlick(T F0, float cosTheta) {
 
 /**
  * Unpolarized Fresnel term for dielectric materials.
- * @param cosThetaT Returns the cosine of the transmitted ray, or -1 in the case
- * of total internal reflection.
- * @param eta The relative IOR (n2 / n1).
+ * @param cosThetaI
+ * @param eta the relative IOR (n2 / n1)
+ * @returns the cosine of the transmitted ray, or 1 in the case of total internal reflection.
  */
-inline float fresnelDielectric(float cosThetaI, float eta) {
+inline float fresnelDielectric(float cosThetaI, const float eta) {
     const float invEta = 1 / eta;
-    float cosThetaTSqr = 1 - sqr(invEta) * (1 - sqr(cosThetaI));
+    const float cosThetaTSqr = 1 - sqr(invEta) * (1 - sqr(cosThetaI));
     if (cosThetaTSqr <= 0.0f) {
-        /// total internal reflection
+        // Total internal reflection
         return 1;
     }
 
     cosThetaI = abs(cosThetaI);
-    float cosThetaT = sqrt(cosThetaTSqr);
+    const float cosThetaT = sqrt(cosThetaTSqr);
 
-    float Rs = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
-    float Rp = (cosThetaI - eta * cosThetaT) / (cosThetaI + eta * cosThetaT);
+    const float Rs = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
+    const float Rp = (cosThetaI - eta * cosThetaT) / (cosThetaI + eta * cosThetaT);
 
-    /// Average the power of both polarizations
+    // Average the power of both polarizations
     return 0.5f * (Rs * Rs + Rp * Rp);
 }
 

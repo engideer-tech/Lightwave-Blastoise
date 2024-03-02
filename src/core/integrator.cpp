@@ -19,12 +19,12 @@ void SamplingIntegrator::execute() {
     m_image->initialize(resolution);
 
     const float norm = 1.0f / m_sampler->samplesPerPixel();
-    
-    Streaming stream { *m_image };
-    ProgressReporter progress { resolution.product() };
+
+    Streaming stream = {*m_image};
+    ProgressReporter progress = {resolution.product()};
     for_each_parallel(BlockSpiral(resolution, Vector2i(64)), [&](auto block) {
         auto sampler = m_sampler->clone();
-        for (auto pixel : block) {
+        for (auto pixel: block) {
             Color sum;
             for (int sample = 0; sample < m_sampler->samplesPerPixel(); sample++) {
                 sampler->seed(pixel, sample);
@@ -42,4 +42,4 @@ void SamplingIntegrator::execute() {
     m_image->save();
 }
 
-}
+} // namespace lightwave

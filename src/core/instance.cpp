@@ -128,7 +128,7 @@ Bounds Instance::getBoundingBox() const {
     for (int point = 0; point < 8; point++) {
         Point p = untransformedAABB.min();
         for (int dim = 0; dim < p.Dimension; dim++) {
-            if ((point >> dim) & 1) {
+            if (((point >> dim) & 1) != 0) {
                 p[dim] = untransformedAABB.max()[dim];
             }
         }
@@ -153,6 +153,6 @@ AreaSample Instance::sampleArea(Sampler& rng) const {
     return sample;
 }
 
-}
+} // namespace lightwave
 
 REGISTER_CLASS(Instance, "instance", "default")

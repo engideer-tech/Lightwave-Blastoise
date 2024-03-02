@@ -1,7 +1,11 @@
 #include <lightwave.hpp>
 
 namespace lightwave {
-
+/**
+ * A non-intersectable light with an area sampled via NEE (see point.cpp for details).
+ * Here we additionally need to divide by the probability of sampling a point on our area, since in the end we want to
+ * compute an average.
+ */
 class AreaLight final : public Light {
 private:
     ref<Instance> m_instance;
@@ -25,7 +29,7 @@ public:
 
         const float cosTheta = abs(sample.frame.normal.dot(wi));
         const Color emission = m_instance->emission()->evaluate(sample.uv, sample.frame.toLocal(-wi)).value
-                               * cosTheta / (sample.pdf * distanceSquared);
+                               * cosTheta / (distanceSquared * sample.pdf);
 
         return {wi, emission, distance};
     }
